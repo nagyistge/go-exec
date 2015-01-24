@@ -34,6 +34,12 @@ type WriteFile interface {
 	Chmod(mode os.FileMode) error
 }
 
+type Destroyable interface {
+	Destroy() error
+	Do(func() (interface{}, error)) (interface{}, error)
+	AddChild(Destroyable) error
+}
+
 type DirContext interface {
 	DirPath() string
 }
@@ -55,6 +61,17 @@ type ReadFileManager interface {
 	Open(path string) (ReadFile, error)
 }
 
+type ExecutorReadFileManager interface {
+	Destroyable
+	ReadFileManager
+	Execute(cmd *Cmd) func() error
+}
+
+type ExecutorReadFileManagerProvider interface {
+	Destroyable
+	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
+}
+
 // All paths must be relative
 type WriteFileManager interface {
 	DirContext
@@ -66,6 +83,17 @@ type WriteFileManager interface {
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
+}
+
+type ExecutorWriteFileManager interface {
+	Destroyable
+	WriteFileManager
+	Execute(cmd *Cmd) func() error
+}
+
+type ExecutorWriteFileManagerProvider interface {
+	Destroyable
+	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 }
 
 type ReadWriteFileManager interface {
@@ -81,26 +109,10 @@ type ReadWriteFileManager interface {
 	MkdirAll(path string, perm os.FileMode) error
 }
 
-type Destroyable interface {
-	Destroy() error
-	Do(func() (interface{}, error)) (interface{}, error)
-	AddChild(Destroyable) error
-}
-
 type Client interface {
-	DirContext
 	Destroyable
+	ReadWriteFileManager
 	Execute(cmd *Cmd) func() error
-	IsFileExists(path string) (bool, error)
-	ListRegularFiles(path string) ([]string, error)
-	Join(elem ...string) string
-	Match(pattern string, path string) (bool, error)
-	ToSlash(path string) string
-	PathSeparator() string
-	Open(path string) (ReadFile, error)
-	Create(name string) (WriteFile, error)
-	MkdirAll(path string, perm os.FileMode) error
-	NewSubDirClient(string) (Client, error)
 }
 
 type ClientProvider interface {

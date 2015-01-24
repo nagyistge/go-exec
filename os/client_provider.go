@@ -12,6 +12,14 @@ const (
 	tempDirPrefix = "exec"
 )
 
+func NewExecutorReadFileManagerProvider() (exec.ExecutorReadFileManagerProvider, error) {
+	return newClientProvider(), nil
+}
+
+func NewExecutorWriteFileManagerProvider() (exec.ExecutorWriteFileManagerProvider, error) {
+	return newClientProvider(), nil
+}
+
 func NewClientProvider() (exec.ClientProvider, error) {
 	return newClientProvider(), nil
 }
@@ -22,6 +30,14 @@ type clientProvider struct {
 
 func newClientProvider() *clientProvider {
 	return &clientProvider{exec.NewDestroyable(nil)}
+}
+
+func (this *clientProvider) NewTempDirExecutorReadFileManager() (exec.ExecutorReadFileManager, error) {
+	return this.NewTempDirClient()
+}
+
+func (this *clientProvider) NewTempDirExecutorWriteFileManager() (exec.ExecutorWriteFileManager, error) {
+	return this.NewTempDirClient()
 }
 
 func (this *clientProvider) NewTempDirClient() (exec.Client, error) {
