@@ -15,7 +15,7 @@ import (
 type Suite struct {
 	suite.Suite
 
-	clientProvider *clientProvider
+	clientProvider exec.ClientProvider
 }
 
 func TestSuite(t *testing.T) {
@@ -30,28 +30,58 @@ func (this *Suite) SetupTest() {
 }
 
 func (this *Suite) TearDownTest() {
+	require.NoError(this.T(), this.clientProvider.Destroy())
 }
 
 func (this *Suite) TearDownSuite() {
 }
 
-func (this *Suite) TestSimple() {
+func (this *Suite) TestPwd() {
+	client := this.newClient()
+	pwd, _ := this.execute(client, []string{"pwd", "-P"})
+	require.Equal(this.T(), client.DirPath(), pwd)
+	this.destroy()
+	this.checkFileDoesNotExist(client.DirPath())
+}
+
+func (this *Suite) TestLotsOfDestroys() {
+
+}
+
+func (this *Suite) newClient() exec.Client {
 	client, err := this.clientProvider.NewTempDirClient()
 	require.NoError(this.T(), err)
-	_, err = stdos.Stat(client.DirPath())
-	require.NoError(this.T(), err)
-	var buffer bytes.Buffer
-	err = client.Execute(
+	this.checkFileExists(client.DirPath())
+	return client
+}
+
+func (this *Suite) execute(client exec.Client, args []string) (stdout string, stderr string) {
+	var stdoutBuffer bytes.Buffer
+	var stderrBuffer bytes.Buffer
+	err := client.Execute(
 		&exec.Cmd{
-			Args:   []string{"pwd", "-P"},
-			Stdout: &buffer,
+			Args:   args,
+			Stdout: &stdoutBuffer,
+			Stderr: &stderrBuffer,
 		},
 	)()
+	stdout = strings.TrimSpace(stdoutBuffer.String())
+	stderr = strings.TrimSpace(stderrBuffer.String())
+	require.NoError(this.T(), err, stderr)
+	return
+}
+
+func (this *Suite) destroy() {
+	err := this.clientProvider.Destroy()
 	require.NoError(this.T(), err)
-	dirString := strings.TrimSpace(buffer.String())
-	require.Equal(this.T(), client.DirPath(), dirString)
-	err = this.clientProvider.Destroy()
+}
+
+func (this *Suite) checkFileExists(path string) {
+	_, err := stdos.Stat(path)
 	require.NoError(this.T(), err)
-	_, err = stdos.Stat(client.DirPath())
-	require.True(this.T(), stdos.IsNotExist(err), "Directory still exists")
+}
+
+func (this *Suite) checkFileDoesNotExist(path string) {
+	_, err := stdos.Stat(path)
+	require.True(this.T(), stdos.IsNotExist(err))
 }
