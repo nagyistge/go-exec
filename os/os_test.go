@@ -40,12 +40,29 @@ func (this *Suite) TestPwd() {
 	client := this.newClient()
 	pwd, _ := this.execute(client, []string{"pwd", "-P"})
 	require.Equal(this.T(), client.DirPath(), pwd)
-	this.destroy()
-	this.checkFileDoesNotExist(client.DirPath())
+	this.destroy(client)
 }
 
 func (this *Suite) TestLotsOfDestroys() {
-
+	client := this.newClient()
+	done := make(chan error)
+	for i := 0; i < 10; i++ {
+		go func() {
+			done <- client.Destroy()
+		}()
+	}
+	count := 0
+	for i := 0; i < 10; i++ {
+		err := <-done
+		if err != nil {
+			if err == exec.ErrAlreadyDestroyed {
+				count++
+			} else {
+				require.NoError(this.T(), err)
+			}
+		}
+	}
+	require.Equal(this.T(), 9, count)
 }
 
 func (this *Suite) newClient() exec.Client {
@@ -71,9 +88,10 @@ func (this *Suite) execute(client exec.Client, args []string) (stdout string, st
 	return
 }
 
-func (this *Suite) destroy() {
-	err := this.clientProvider.Destroy()
+func (this *Suite) destroy(client exec.Client) {
+	err := client.Destroy()
 	require.NoError(this.T(), err)
+	this.checkFileDoesNotExist(client.DirPath())
 }
 
 func (this *Suite) checkFileExists(path string) {

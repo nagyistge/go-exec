@@ -25,7 +25,7 @@ type destroyable struct {
 
 func (this *destroyable) Destroy() error {
 	this.cv.L.Lock()
-	if this.destroyed.compareAndSwap(true, true) {
+	if !this.destroyed.compareAndSwap(false, true) {
 		this.cv.L.Unlock()
 		return ErrAlreadyDestroyed
 	}
