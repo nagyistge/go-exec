@@ -28,6 +28,12 @@ type ReadFile interface {
 	Readdirnames(n int) ([]string, error)
 }
 
+type WriteFile interface {
+	File
+	io.Writer
+	Chmod(mode os.FileMode) error
+}
+
 type DirContext interface {
 	DirPath() string
 }
@@ -38,15 +44,41 @@ type Executor interface {
 }
 
 // All paths must be relative
-type FileManager interface {
+type ReadFileManager interface {
 	DirContext
 	IsFileExists(path string) (bool, error)
-	Open(path string) (ReadFile, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
 	PathSeparator() string
+	Open(path string) (ReadFile, error)
+}
+
+// All paths must be relative
+type WriteFileManager interface {
+	DirContext
+	IsFileExists(path string) (bool, error)
+	ListRegularFiles(path string) ([]string, error)
+	Join(elem ...string) string
+	Match(pattern string, path string) (bool, error)
+	ToSlash(path string) string
+	PathSeparator() string
+	Create(name string) (WriteFile, error)
+	MkdirAll(path string, perm os.FileMode) error
+}
+
+type ReadWriteFileManager interface {
+	DirContext
+	IsFileExists(path string) (bool, error)
+	ListRegularFiles(path string) ([]string, error)
+	Join(elem ...string) string
+	Match(pattern string, path string) (bool, error)
+	ToSlash(path string) string
+	PathSeparator() string
+	Open(path string) (ReadFile, error)
+	Create(name string) (WriteFile, error)
+	MkdirAll(path string, perm os.FileMode) error
 }
 
 type Destroyable interface {
@@ -60,12 +92,14 @@ type Client interface {
 	Destroyable
 	Execute(cmd *Cmd) func() error
 	IsFileExists(path string) (bool, error)
-	Open(path string) (ReadFile, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
 	PathSeparator() string
+	Open(path string) (ReadFile, error)
+	Create(name string) (WriteFile, error)
+	MkdirAll(path string, perm os.FileMode) error
 	NewSubDirClient(string) (Client, error)
 }
 

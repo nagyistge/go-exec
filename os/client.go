@@ -1,4 +1,4 @@
-package impl
+package os
 
 import (
 	stdos "os"
@@ -77,6 +77,29 @@ func (this *client) Open(path string) (exec.ReadFile, error) {
 		return nil, err
 	}
 	return value.(*stdos.File), nil
+}
+
+func (this *client) Create(path string) (exec.WriteFile, error) {
+	if err := this.validatePath(path); err != nil {
+		return nil, err
+	}
+	value, err := this.Do(func() (interface{}, error) {
+		return stdos.Create(this.absolutePath(path))
+	})
+	if err != nil {
+		return nil, err
+	}
+	return value.(*stdos.File), nil
+}
+
+func (this *client) MkdirAll(path string, perm stdos.FileMode) error {
+	if err := this.validatePath(path); err != nil {
+		return err
+	}
+	_, err := this.Do(func() (interface{}, error) {
+		return nil, stdos.MkdirAll(this.absolutePath(path), perm)
+	})
+	return err
 }
 
 func (this *client) ListRegularFiles(path string) ([]string, error) {
