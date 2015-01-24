@@ -25,7 +25,7 @@ func (this *client) DirPath() string {
 func (this *client) Execute(cmd *exec.Cmd) func() error {
 	value, err := this.Do(func() (interface{}, error) {
 		stdosexecCmd, err := this.stdosexecCmd(cmd)
-		if err == nil {
+		if err != nil {
 			return nil, err
 		}
 		if err := stdosexecCmd.Start(); err != nil {
