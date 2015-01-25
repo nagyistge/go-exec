@@ -29,17 +29,12 @@ var (
 
 ```go
 type Client interface {
-	DirContext
 	Destroyable
+	ReadWriteFileManager
 	Execute(cmd *Cmd) func() error
-	IsFileExists(path string) (bool, error)
-	Open(path string) (ReadFile, error)
-	ListRegularFiles(path string) ([]string, error)
-	Join(elem ...string) string
-	Match(pattern string, path string) (bool, error)
-	ToSlash(path string) string
-	PathSeparator() string
-	NewSubDirClient(string) (Client, error)
+	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
+	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
+	NewSubDirClient(path string) (Client, error)
 }
 ```
 
@@ -49,6 +44,8 @@ type Client interface {
 ```go
 type ClientProvider interface {
 	Destroyable
+	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
+	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 	NewTempDirClient() (Client, error)
 }
 ```
@@ -107,6 +104,50 @@ type Executor interface {
 ```
 
 
+#### type ExecutorReadFileManager
+
+```go
+type ExecutorReadFileManager interface {
+	Destroyable
+	ReadFileManager
+	Execute(cmd *Cmd) func() error
+	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
+}
+```
+
+
+#### type ExecutorReadFileManagerProvider
+
+```go
+type ExecutorReadFileManagerProvider interface {
+	Destroyable
+	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
+}
+```
+
+
+#### type ExecutorWriteFileManager
+
+```go
+type ExecutorWriteFileManager interface {
+	Destroyable
+	WriteFileManager
+	Execute(cmd *Cmd) func() error
+	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
+}
+```
+
+
+#### type ExecutorWriteFileManagerProvider
+
+```go
+type ExecutorWriteFileManagerProvider interface {
+	Destroyable
+	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
+}
+```
+
+
 #### type File
 
 ```go
@@ -117,23 +158,6 @@ type File interface {
 ```
 
 
-#### type FileManager
-
-```go
-type FileManager interface {
-	DirContext
-	IsFileExists(path string) (bool, error)
-	Open(path string) (ReadFile, error)
-	ListRegularFiles(path string) ([]string, error)
-	Join(elem ...string) string
-	Match(pattern string, path string) (bool, error)
-	ToSlash(path string) string
-	PathSeparator() string
-}
-```
-
-All paths must be relative
-
 #### type ReadFile
 
 ```go
@@ -143,3 +167,68 @@ type ReadFile interface {
 	Readdirnames(n int) ([]string, error)
 }
 ```
+
+
+#### type ReadFileManager
+
+```go
+type ReadFileManager interface {
+	DirContext
+	IsFileExists(path string) (bool, error)
+	ListRegularFiles(path string) ([]string, error)
+	Join(elem ...string) string
+	Match(pattern string, path string) (bool, error)
+	ToSlash(path string) string
+	PathSeparator() string
+	Open(path string) (ReadFile, error)
+}
+```
+
+All paths must be relative
+
+#### type ReadWriteFileManager
+
+```go
+type ReadWriteFileManager interface {
+	DirContext
+	IsFileExists(path string) (bool, error)
+	ListRegularFiles(path string) ([]string, error)
+	Join(elem ...string) string
+	Match(pattern string, path string) (bool, error)
+	ToSlash(path string) string
+	PathSeparator() string
+	Open(path string) (ReadFile, error)
+	Create(name string) (WriteFile, error)
+	MkdirAll(path string, perm os.FileMode) error
+}
+```
+
+
+#### type WriteFile
+
+```go
+type WriteFile interface {
+	File
+	io.Writer
+	Chmod(mode os.FileMode) error
+}
+```
+
+
+#### type WriteFileManager
+
+```go
+type WriteFileManager interface {
+	DirContext
+	IsFileExists(path string) (bool, error)
+	ListRegularFiles(path string) ([]string, error)
+	Join(elem ...string) string
+	Match(pattern string, path string) (bool, error)
+	ToSlash(path string) string
+	PathSeparator() string
+	Create(name string) (WriteFile, error)
+	MkdirAll(path string, perm os.FileMode) error
+}
+```
+
+All paths must be relative
