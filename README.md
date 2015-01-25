@@ -4,13 +4,13 @@
 
 ## Installation
 ```bash
-go get -u gopkg.in/peter-edge/exec.v1
+go get -u github.com/peter-edge/exec
 ```
 
 ## Import
 ```go
 import (
-    "gopkg.in/peter-edge/exec.v1"
+    "github.com/peter-edge/exec"
 )
 ```
 
