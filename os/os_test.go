@@ -7,9 +7,9 @@ import (
 
 	"testing"
 
+	"github.com/peter-edge/exec"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/peter-edge/exec.v1"
 )
 
 type Suite struct {

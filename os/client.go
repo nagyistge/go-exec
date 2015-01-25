@@ -5,7 +5,7 @@ import (
 	stdosexec "os/exec"
 	"path/filepath"
 
-	"gopkg.in/peter-edge/exec.v1"
+	"github.com/peter-edge/exec"
 )
 
 type client struct {
