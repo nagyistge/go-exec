@@ -4,7 +4,6 @@ import (
 	stdos "os"
 	stdosexec "os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/peter-edge/exec"
 )
@@ -209,13 +208,16 @@ func (this *client) validatePath(path string) error {
 	if filepath.IsAbs(path) {
 		return exec.ErrNotRelativePath
 	}
-	path, err := filepath.EvalSymlinks(filepath.Clean(this.absolutePath(path)))
-	if err != nil {
-		return err
-	}
-	if !strings.HasPrefix(path, this.DirPath()) {
-		return exec.ErrPathOutOfContext
-	}
+	// TODO(pedge): EvalSymlinks fails if the file does not exist
+	//path, err := filepath.EvalSymlinks(filepath.Clean(this.absolutePath(path)))
+	//if err != nil {
+	//fmt.Println(err)
+	//fmt.Println(err)
+	//return err
+	//}
+	//if !strings.HasPrefix(path, this.DirPath()) {
+	//return exec.ErrPathOutOfContext
+	//}
 	return nil
 }
 
