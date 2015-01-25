@@ -171,8 +171,8 @@ func (this *client) newSubDirClient(path string) (*client, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
-		return nil, exec.ErrFileDoesNotExist
+	if exists {
+		return nil, exec.ErrFileAlreadyExists
 	}
 	if err := stdos.Mkdir(this.absolutePath(path), 0755); err != nil {
 		return nil, err
