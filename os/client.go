@@ -211,8 +211,6 @@ func (this *client) validatePath(path string) error {
 	// TODO(pedge): EvalSymlinks fails if the file does not exist
 	//path, err := filepath.EvalSymlinks(filepath.Clean(this.absolutePath(path)))
 	//if err != nil {
-	//fmt.Println(err)
-	//fmt.Println(err)
 	//return err
 	//}
 	//if !strings.HasPrefix(path, this.DirPath()) {
