@@ -14,6 +14,7 @@ import (
 )
 ```
 
+## Usage
 
 ```go
 var (
