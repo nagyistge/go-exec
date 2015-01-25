@@ -151,7 +151,19 @@ func (this *client) PathSeparator() string {
 	return string(stdos.PathSeparator)
 }
 
+func (this *client) NewSubDirExecutorReadFileManager(path string) (exec.ExecutorReadFileManager, error) {
+	return this.newSubDirClient(path)
+}
+
+func (this *client) NewSubDirExecutorWriteFileManager(path string) (exec.ExecutorWriteFileManager, error) {
+	return this.newSubDirClient(path)
+}
+
 func (this *client) NewSubDirClient(path string) (exec.Client, error) {
+	return this.newSubDirClient(path)
+}
+
+func (this *client) newSubDirClient(path string) (*client, error) {
 	if err := this.validatePath(path); err != nil {
 		return nil, err
 	}

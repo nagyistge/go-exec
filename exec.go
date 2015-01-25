@@ -65,6 +65,7 @@ type ExecutorReadFileManager interface {
 	Destroyable
 	ReadFileManager
 	Execute(cmd *Cmd) func() error
+	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
 }
 
 type ExecutorReadFileManagerProvider interface {
@@ -89,6 +90,7 @@ type ExecutorWriteFileManager interface {
 	Destroyable
 	WriteFileManager
 	Execute(cmd *Cmd) func() error
+	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
 }
 
 type ExecutorWriteFileManagerProvider interface {
@@ -113,9 +115,14 @@ type Client interface {
 	Destroyable
 	ReadWriteFileManager
 	Execute(cmd *Cmd) func() error
+	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
+	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
+	NewSubDirClient(path string) (Client, error)
 }
 
 type ClientProvider interface {
 	Destroyable
+	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
+	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 	NewTempDirClient() (Client, error)
 }
