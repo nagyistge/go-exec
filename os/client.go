@@ -146,6 +146,10 @@ func (this *client) ToSlash(path string) string {
 	return filepath.ToSlash(path)
 }
 
+func (this *client) Dir(path string) string {
+	return filepath.Dir(path)
+}
+
 func (this *client) PathSeparator() string {
 	return string(stdos.PathSeparator)
 }

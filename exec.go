@@ -57,6 +57,7 @@ type ReadFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
 }
@@ -81,6 +82,7 @@ type WriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Dir(path string) string
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
@@ -105,6 +107,7 @@ type ReadWriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
 	Create(name string) (WriteFile, error)
