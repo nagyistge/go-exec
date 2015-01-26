@@ -9,6 +9,10 @@ type Cmd struct {
 	// Includes path
 	Args []string
 
+	// can be empty
+	// must be relative
+	SubDir string
+
 	// Can be nil
 	Stdin io.Reader
 	// Can be nil

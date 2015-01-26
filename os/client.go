@@ -22,6 +22,11 @@ func (this *client) DirPath() string {
 }
 
 func (this *client) Execute(cmd *exec.Cmd) func() error {
+	if cmd.SubDir != "" {
+		if err := this.validatePath(cmd.SubDir); err != nil {
+			return func() error { return err }
+		}
+	}
 	value, err := this.Do(func() (interface{}, error) {
 		stdosexecCmd, err := this.stdosexecCmd(cmd)
 		if err != nil {
@@ -237,7 +242,11 @@ func (this *client) stdosexecCmd(cmd *exec.Cmd) (*stdosexec.Cmd, error) {
 	} else {
 		stdosexecCmd = stdosexec.Command(cmd.Args[0], cmd.Args[1:]...)
 	}
-	stdosexecCmd.Dir = this.dirPath
+	if cmd.SubDir != "" {
+		stdosexecCmd.Dir = this.absolutePath(cmd.SubDir)
+	} else {
+		stdosexecCmd.Dir = this.dirPath
+	}
 	stdosexecCmd.Stdin = cmd.Stdin
 	stdosexecCmd.Stdout = cmd.Stdout
 	stdosexecCmd.Stderr = cmd.Stderr
