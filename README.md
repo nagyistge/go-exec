@@ -1,4 +1,4 @@
-[![Codeship Status](http://img.shields.io/codeship/34b974b0-6dfa-0132-51b4-66f2bf861e14/master.svg?style=flat-square)](https://codeship.com/projects/57533)
+[![Codeship Status](http://img.shields.io/codeship/34b974b0-6dfa-0132-51b4-66f2bf861e14/master.svg?style=flat-square)](https://codeship.com/projects/59077)
 [![API Documentation](http://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/peter-edge/exec)
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/peter-edge/exec/blob/master/LICENSE)
 
@@ -181,6 +181,7 @@ type ReadFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
 }
@@ -198,6 +199,7 @@ type ReadWriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
 	Create(name string) (WriteFile, error)
@@ -227,6 +229,7 @@ type WriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Dir(path string) string
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
