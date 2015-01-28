@@ -1,6 +1,7 @@
 package os
 
 import (
+	"io"
 	stdos "os"
 	stdosexec "os/exec"
 	"path/filepath"
@@ -36,6 +37,79 @@ func (this *client) Execute(cmd *exec.Cmd) func() error {
 			return nil, err
 		}
 		return func() error { return stdosexecCmd.Wait() }, nil
+	})
+	if err != nil {
+		return func() error { return err }
+	}
+	return value.(func() error)
+}
+
+func (this *client) ExecutePiped(pipeCmdList *exec.PipeCmdList) func() error {
+	numCmds := len(pipeCmdList.PipeCmds)
+	if numCmds < 2 {
+		return func() error { return exec.ErrNotMultipleCommands }
+	}
+	for _, pipeCmd := range pipeCmdList.PipeCmds {
+		if pipeCmd.SubDir != "" {
+			if err := this.validatePath(pipeCmd.SubDir); err != nil {
+				return func() error { return err }
+			}
+		}
+	}
+	stdosexecCmds := make([]*stdosexec.Cmd, numCmds)
+	for i, pipeCmd := range pipeCmdList.PipeCmds {
+		stdosexecCmd, err := this.stdosexecPipeCmd(pipeCmd)
+		if err != nil {
+			return func() error { return err }
+		}
+		stdosexecCmds[i] = stdosexecCmd
+	}
+	readers := make([]*io.PipeReader, numCmds-1)
+	writers := make([]*io.PipeWriter, numCmds-1)
+	value, err := this.Do(func() (interface{}, error) {
+		reader, writer := io.Pipe()
+		readers[0] = reader
+		writers[0] = writer
+		stdosexecCmds[0].Stdin = pipeCmdList.Stdin
+		for i := 0; i < numCmds-1; i++ {
+			stdosexecCmds[i].Stdout = writer
+			stdosexecCmds[i].Stderr = pipeCmdList.Stderr
+			stdosexecCmds[i+1].Stdin = reader
+			if i != numCmds-2 {
+				reader, writer = io.Pipe()
+				readers[i+1] = reader
+				writers[i+1] = writer
+			}
+		}
+		stdosexecCmds[numCmds-1].Stdout = pipeCmdList.Stdout
+		stdosexecCmds[numCmds-1].Stderr = pipeCmdList.Stderr
+		for _, stdosexecCmd := range stdosexecCmds {
+			if err := stdosexecCmd.Start(); err != nil {
+				return nil, err
+			}
+		}
+		return func() error {
+			for i := 0; i < numCmds-1; i++ {
+				if err := stdosexecCmds[i].Wait(); err != nil {
+					return err
+				}
+				if i != 0 {
+					if err := readers[i-1].Close(); err != nil {
+						return err
+					}
+				}
+				if err := writers[i].Close(); err != nil {
+					return err
+				}
+			}
+			if err := stdosexecCmds[numCmds-1].Wait(); err != nil {
+				return err
+			}
+			if err := readers[numCmds-2].Close(); err != nil {
+				return err
+			}
+			return nil
+		}, nil
 	})
 	if err != nil {
 		return func() error { return err }
@@ -250,5 +324,23 @@ func (this *client) stdosexecCmd(cmd *exec.Cmd) (*stdosexec.Cmd, error) {
 	stdosexecCmd.Stdin = cmd.Stdin
 	stdosexecCmd.Stdout = cmd.Stdout
 	stdosexecCmd.Stderr = cmd.Stderr
+	return stdosexecCmd, nil
+}
+
+func (this *client) stdosexecPipeCmd(pipeCmd *exec.PipeCmd) (*stdosexec.Cmd, error) {
+	if pipeCmd.Args == nil || len(pipeCmd.Args) == 0 {
+		return nil, exec.ErrArgsEmpty
+	}
+	var stdosexecCmd *stdosexec.Cmd
+	if len(pipeCmd.Args) == 1 {
+		stdosexecCmd = stdosexec.Command(pipeCmd.Args[0])
+	} else {
+		stdosexecCmd = stdosexec.Command(pipeCmd.Args[0], pipeCmd.Args[1:]...)
+	}
+	if pipeCmd.SubDir != "" {
+		stdosexecCmd.Dir = this.absolutePath(pipeCmd.SubDir)
+	} else {
+		stdosexecCmd.Dir = this.dirPath
+	}
 	return stdosexecCmd, nil
 }

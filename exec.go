@@ -21,6 +21,26 @@ type Cmd struct {
 	Stderr io.Writer
 }
 
+type PipeCmd struct {
+	// Includes path
+	Args []string
+
+	// can be empty
+	// must be relative
+	SubDir string
+}
+
+type PipeCmdList struct {
+	PipeCmds []*PipeCmd
+
+	// Can be nil
+	Stdin io.Reader
+	// Can be nil
+	Stdout io.Writer
+	// Can be nil
+	Stderr io.Writer
+}
+
 type File interface {
 	Stat() (os.FileInfo, error)
 	Close() error
@@ -51,6 +71,7 @@ type DirContext interface {
 type Executor interface {
 	DirContext
 	Execute(cmd *Cmd) func() error
+	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 }
 
 // All paths must be relative
@@ -70,6 +91,7 @@ type ExecutorReadFileManager interface {
 	Destroyable
 	ReadFileManager
 	Execute(cmd *Cmd) func() error
+	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
 }
 
@@ -96,6 +118,7 @@ type ExecutorWriteFileManager interface {
 	Destroyable
 	WriteFileManager
 	Execute(cmd *Cmd) func() error
+	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
 }
 
@@ -122,6 +145,7 @@ type Client interface {
 	Destroyable
 	ReadWriteFileManager
 	Execute(cmd *Cmd) func() error
+	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
 	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
 	NewSubDirClient(path string) (Client, error)

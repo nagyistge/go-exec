@@ -43,6 +43,44 @@ func (this *Suite) TestPwd() {
 	this.destroy(client)
 }
 
+func (this *Suite) TestPipe() {
+	client := this.newClient()
+	var input bytes.Buffer
+	input.WriteString("hello\n")
+	input.WriteString("hello\n")
+	input.WriteString("woot\n")
+	input.WriteString("hello\n")
+	input.WriteString("foo\n")
+	input.WriteString("woot\n")
+	input.WriteString("foo\n")
+	input.WriteString("woot\n")
+	input.WriteString("hello\n")
+	input.WriteString("foo\n")
+	input.WriteString("foo\n")
+	input.WriteString("foo\n")
+	var output bytes.Buffer
+	err := client.ExecutePiped(
+		&exec.PipeCmdList{
+			PipeCmds: []*exec.PipeCmd{
+				&exec.PipeCmd{
+					Args: []string{"sort"},
+				},
+				&exec.PipeCmd{
+					Args: []string{"uniq"},
+				},
+				&exec.PipeCmd{
+					Args: []string{"wc", "-l"},
+				},
+			},
+			Stdin:  &input,
+			Stdout: &output,
+		},
+	)()
+	require.NoError(this.T(), err)
+	require.True(this.T(), strings.Contains(output.String(), "3"))
+	this.destroy(client)
+}
+
 func (this *Suite) TestLotsOfDestroys() {
 	client := this.newClient()
 	done := make(chan error)
