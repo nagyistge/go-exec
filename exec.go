@@ -13,6 +13,9 @@ type Cmd struct {
 	// must be relative
 	SubDir string
 
+	// can be nil or empty
+	Env []string
+
 	// Can be nil
 	Stdin io.Reader
 	// Can be nil
@@ -28,6 +31,9 @@ type PipeCmd struct {
 	// can be empty
 	// must be relative
 	SubDir string
+
+	// can be nil or empty
+	Env []string
 }
 
 type PipeCmdList struct {

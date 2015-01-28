@@ -2,6 +2,7 @@ package os
 
 import (
 	"bytes"
+	"io/ioutil"
 	stdos "os"
 	"strings"
 
@@ -41,6 +42,33 @@ func (this *Suite) TestPwd() {
 	pwd, _ := this.execute(client, []string{"pwd", "-P"})
 	require.Equal(this.T(), client.DirPath(), pwd)
 	this.destroy(client)
+}
+
+func (this *Suite) TestEnv() {
+	client := this.newClient()
+	writeFile, err := client.Create("echo_foo.sh")
+	require.NoError(this.T(), err)
+	fromFile, err := stdos.Open("_testdata/echo_foo.sh")
+	require.NoError(this.T(), err)
+	defer fromFile.Close()
+	data, err := ioutil.ReadAll(fromFile)
+	require.NoError(this.T(), err)
+	_, err = writeFile.Write(data)
+	require.NoError(this.T(), err)
+	err = writeFile.Chmod(0777)
+	require.NoError(this.T(), err)
+	writeFile.Close()
+
+	var output bytes.Buffer
+	err = client.Execute(
+		&exec.Cmd{
+			Args:   []string{"bash", "echo_foo.sh"},
+			Env:    []string{"FOO=foo"},
+			Stdout: &output,
+		},
+	)()
+	require.NoError(this.T(), err)
+	require.Equal(this.T(), "foo", strings.TrimSpace(output.String()))
 }
 
 func (this *Suite) TestPipe() {

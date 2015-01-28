@@ -321,6 +321,9 @@ func (this *client) stdosexecCmd(cmd *exec.Cmd) (*stdosexec.Cmd, error) {
 	} else {
 		stdosexecCmd.Dir = this.dirPath
 	}
+	if cmd.Env != nil && len(cmd.Env) > 0 {
+		stdosexecCmd.Env = cmd.Env
+	}
 	stdosexecCmd.Stdin = cmd.Stdin
 	stdosexecCmd.Stdout = cmd.Stdout
 	stdosexecCmd.Stderr = cmd.Stderr
@@ -341,6 +344,9 @@ func (this *client) stdosexecPipeCmd(pipeCmd *exec.PipeCmd) (*stdosexec.Cmd, err
 		stdosexecCmd.Dir = this.absolutePath(pipeCmd.SubDir)
 	} else {
 		stdosexecCmd.Dir = this.dirPath
+	}
+	if pipeCmd.Env != nil && len(pipeCmd.Env) > 0 {
+		stdosexecCmd.Env = pipeCmd.Env
 	}
 	return stdosexecCmd, nil
 }
