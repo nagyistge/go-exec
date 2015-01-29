@@ -8,7 +8,7 @@ import (
 
 	"testing"
 
-	"github.com/peter-edge/exec"
+	"github.com/peter-edge/go-exec"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

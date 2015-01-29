@@ -6,7 +6,7 @@ import (
 	stdosexec "os/exec"
 	"path/filepath"
 
-	"github.com/peter-edge/exec"
+	"github.com/peter-edge/go-exec"
 )
 
 type client struct {

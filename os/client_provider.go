@@ -5,7 +5,7 @@ import (
 	stdos "os"
 	"path/filepath"
 
-	"github.com/peter-edge/exec"
+	"github.com/peter-edge/go-exec"
 )
 
 const (
