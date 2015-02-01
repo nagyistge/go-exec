@@ -5,6 +5,44 @@ import (
 	"os"
 )
 
+type ExternalExecOptions struct {
+	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+}
+
+func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorReadFileManagerProvider, error) {
+	return NewExternalClientProvider(externalExecOptions)
+}
+
+func NewExternalExecutorWriteFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorWriteFileManagerProvider, error) {
+	return NewExternalClientProvider(externalExecOptions)
+}
+
+func NewExternalClientProvider(externalExecOptions *ExternalExecOptions) (ClientProvider, error) {
+	return newExternalClientProvider(externalExecOptions)
+}
+
+type ExecOptions interface {
+	Type() ExecType
+}
+
+type OsExecOptions struct{}
+
+func (this *OsExecOptions) Type() ExecType {
+	return ExecTypeOs
+}
+
+func NewExecutorReadFileManagerProvider(execOptions ExecOptions) (ExecutorReadFileManagerProvider, error) {
+	return NewClientProvider(execOptions)
+}
+
+func NewExecutorWriteFileManagerProvider(execOptions ExecOptions) (ExecutorWriteFileManagerProvider, error) {
+	return NewClientProvider(execOptions)
+}
+
+func NewClientProvider(execOptions ExecOptions) (ClientProvider, error) {
+	return newClientProvider(execOptions)
+}
+
 type Cmd struct {
 	// Includes path
 	Args []string

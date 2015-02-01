@@ -1,14 +1,13 @@
-package os
+package exec
 
 import (
 	"bytes"
 	"io/ioutil"
-	stdos "os"
+	"os"
 	"strings"
 
 	"testing"
 
-	"github.com/peter-edge/go-exec"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -16,7 +15,7 @@ import (
 type Suite struct {
 	suite.Suite
 
-	clientProvider exec.ClientProvider
+	clientProvider ClientProvider
 }
 
 func TestSuite(t *testing.T) {
@@ -27,7 +26,7 @@ func (this *Suite) SetupSuite() {
 }
 
 func (this *Suite) SetupTest() {
-	this.clientProvider = newClientProvider()
+	this.clientProvider = newOsClientProvider()
 }
 
 func (this *Suite) TearDownTest() {
@@ -48,7 +47,7 @@ func (this *Suite) TestEnv() {
 	client := this.newClient()
 	writeFile, err := client.Create("echo_foo.sh")
 	require.NoError(this.T(), err)
-	fromFile, err := stdos.Open("_testdata/echo_foo.sh")
+	fromFile, err := os.Open("_testdata/echo_foo.sh")
 	require.NoError(this.T(), err)
 	defer fromFile.Close()
 	data, err := ioutil.ReadAll(fromFile)
@@ -61,7 +60,7 @@ func (this *Suite) TestEnv() {
 
 	var output bytes.Buffer
 	err = client.Execute(
-		&exec.Cmd{
+		&Cmd{
 			Args:   []string{"bash", "echo_foo.sh"},
 			Env:    []string{"FOO=foo"},
 			Stdout: &output,
@@ -88,15 +87,15 @@ func (this *Suite) TestPipe() {
 	input.WriteString("foo\n")
 	var output bytes.Buffer
 	err := client.ExecutePiped(
-		&exec.PipeCmdList{
-			PipeCmds: []*exec.PipeCmd{
-				&exec.PipeCmd{
+		&PipeCmdList{
+			PipeCmds: []*PipeCmd{
+				&PipeCmd{
 					Args: []string{"sort"},
 				},
-				&exec.PipeCmd{
+				&PipeCmd{
 					Args: []string{"uniq"},
 				},
-				&exec.PipeCmd{
+				&PipeCmd{
 					Args: []string{"wc", "-l"},
 				},
 			},
@@ -121,7 +120,7 @@ func (this *Suite) TestLotsOfDestroys() {
 	for i := 0; i < 10; i++ {
 		err := <-done
 		if err != nil {
-			if err == exec.ErrAlreadyDestroyed {
+			if err == ErrAlreadyDestroyed {
 				count++
 			} else {
 				require.NoError(this.T(), err)
@@ -131,18 +130,18 @@ func (this *Suite) TestLotsOfDestroys() {
 	require.Equal(this.T(), 9, count)
 }
 
-func (this *Suite) newClient() exec.Client {
+func (this *Suite) newClient() Client {
 	client, err := this.clientProvider.NewTempDirClient()
 	require.NoError(this.T(), err)
 	this.checkFileExists(client.DirPath())
 	return client
 }
 
-func (this *Suite) execute(client exec.Client, args []string) (stdout string, stderr string) {
+func (this *Suite) execute(client Client, args []string) (stdout string, stderr string) {
 	var stdoutBuffer bytes.Buffer
 	var stderrBuffer bytes.Buffer
 	err := client.Execute(
-		&exec.Cmd{
+		&Cmd{
 			Args:   args,
 			Stdout: &stdoutBuffer,
 			Stderr: &stderrBuffer,
@@ -154,18 +153,18 @@ func (this *Suite) execute(client exec.Client, args []string) (stdout string, st
 	return
 }
 
-func (this *Suite) destroy(client exec.Client) {
+func (this *Suite) destroy(client Client) {
 	err := client.Destroy()
 	require.NoError(this.T(), err)
 	this.checkFileDoesNotExist(client.DirPath())
 }
 
 func (this *Suite) checkFileExists(path string) {
-	_, err := stdos.Stat(path)
+	_, err := os.Stat(path)
 	require.NoError(this.T(), err)
 }
 
 func (this *Suite) checkFileDoesNotExist(path string) {
-	_, err := stdos.Stat(path)
-	require.True(this.T(), stdos.IsNotExist(err))
+	_, err := os.Stat(path)
+	require.True(this.T(), os.IsNotExist(err))
 }
