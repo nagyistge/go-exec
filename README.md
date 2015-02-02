@@ -25,6 +25,8 @@ var (
 	ErrArgsEmpty           = errors.New("exec: args empty")
 	ErrFileAlreadyExists   = errors.New("exec: file already exists")
 	ErrNotMultipleCommands = errors.New("exec: not multiple commands")
+
+	ValidationErrorTypeUnknownExecType ValidationErrorType = "UnknownExecType"
 )
 ```
 
@@ -54,6 +56,18 @@ type ClientProvider interface {
 }
 ```
 
+
+#### func  NewClientProvider
+
+```go
+func NewClientProvider(execOptions ExecOptions) (ClientProvider, error)
+```
+
+#### func  NewExternalClientProvider
+
+```go
+func NewExternalClientProvider(externalExecOptions *ExternalExecOptions) (ClientProvider, error)
+```
 
 #### type Cmd
 
@@ -105,6 +119,34 @@ type DirContext interface {
 ```
 
 
+#### type ExecOptions
+
+```go
+type ExecOptions interface {
+	Type() ExecType
+}
+```
+
+
+#### func  ConvertExternalExecOptions
+
+```go
+func ConvertExternalExecOptions(externalExecOptions *ExternalExecOptions) (ExecOptions, error)
+```
+
+#### type ExecType
+
+```go
+type ExecType uint
+```
+
+
+```go
+var (
+	ExecTypeOs ExecType = 0
+)
+```
+
 #### type Executor
 
 ```go
@@ -139,6 +181,18 @@ type ExecutorReadFileManagerProvider interface {
 ```
 
 
+#### func  NewExecutorReadFileManagerProvider
+
+```go
+func NewExecutorReadFileManagerProvider(execOptions ExecOptions) (ExecutorReadFileManagerProvider, error)
+```
+
+#### func  NewExternalExecutorReadFileManagerProvider
+
+```go
+func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorReadFileManagerProvider, error)
+```
+
 #### type ExecutorWriteFileManager
 
 ```go
@@ -162,6 +216,27 @@ type ExecutorWriteFileManagerProvider interface {
 ```
 
 
+#### func  NewExecutorWriteFileManagerProvider
+
+```go
+func NewExecutorWriteFileManagerProvider(execOptions ExecOptions) (ExecutorWriteFileManagerProvider, error)
+```
+
+#### func  NewExternalExecutorWriteFileManagerProvider
+
+```go
+func NewExternalExecutorWriteFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorWriteFileManagerProvider, error)
+```
+
+#### type ExternalExecOptions
+
+```go
+type ExternalExecOptions struct {
+	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+}
+```
+
+
 #### type File
 
 ```go
@@ -171,6 +246,19 @@ type File interface {
 }
 ```
 
+
+#### type OsExecOptions
+
+```go
+type OsExecOptions struct{}
+```
+
+
+#### func (*OsExecOptions) Type
+
+```go
+func (this *OsExecOptions) Type() ExecType
+```
 
 #### type PipeCmd
 
@@ -250,6 +338,23 @@ type ReadWriteFileManager interface {
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
 }
+```
+
+
+#### type ValidationError
+
+```go
+type ValidationError interface {
+	error
+	Type() ValidationErrorType
+}
+```
+
+
+#### type ValidationErrorType
+
+```go
+type ValidationErrorType string
 ```
 
 
