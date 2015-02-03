@@ -123,6 +123,7 @@ type ReadFileManager interface {
 	DirContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
+	ListFileInfosShallow(path string) ([]os.FileInfo, error)
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
@@ -149,6 +150,7 @@ type WriteFileManager interface {
 	DirContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
+	ListFileInfosShallow(path string) ([]os.FileInfo, error)
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
@@ -175,6 +177,7 @@ type ReadWriteFileManager interface {
 	DirContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
+	ListFileInfosShallow(path string) ([]os.FileInfo, error)
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string

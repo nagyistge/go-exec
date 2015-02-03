@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	tempDirPrefix = "exec"
+	tempDirPrefix         = "exec"
+	readDirNamesSliceSize = 100
 )
 
 type osClientProvider struct {
@@ -288,6 +289,52 @@ func (this *osClient) ListRegularFiles(path string) ([]string, error) {
 		return nil, err
 	}
 	return value.([]string), nil
+}
+
+func (this *osClient) ListFileInfosShallow(path string) ([]os.FileInfo, error) {
+	if err := this.validatePath(path); err != nil {
+		return nil, err
+	}
+	value, err := this.Do(func() (retValue interface{}, retErr error) {
+		readFile, err := os.Open(this.absolutePath(path))
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			if err := readFile.Close(); err != nil && retErr == nil {
+				retErr = err
+			}
+		}()
+		stat, err := readFile.Stat()
+		if err != nil {
+			return nil, err
+		}
+		if !stat.IsDir() {
+			return nil, ErrNotADirectory
+		}
+		fileInfos := make([]os.FileInfo, 0)
+		for names, err := readFile.Readdirnames(readDirNamesSliceSize); len(names) > 0 && err != io.EOF; names, err = readFile.Readdirnames(readDirNamesSliceSize) {
+			if err != nil {
+				return nil, err
+			}
+			for _, name := range names {
+				iReadFile, err := os.Open(this.absolutePath(this.Join(path, name)))
+				if err != nil {
+					return nil, err
+				}
+				iStat, err := iReadFile.Stat()
+				if err != nil {
+					return nil, err
+				}
+				fileInfos = append(fileInfos, iStat)
+			}
+		}
+		return fileInfos, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return value.([]os.FileInfo), nil
 }
 
 func (this *osClient) Join(elem ...string) string {

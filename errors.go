@@ -13,6 +13,7 @@ var (
 	ErrArgsEmpty           = errors.New("exec: args empty")
 	ErrFileAlreadyExists   = errors.New("exec: file already exists")
 	ErrNotMultipleCommands = errors.New("exec: not multiple commands")
+	ErrNotADirectory       = errors.New("exec: not a directory")
 
 	ValidationErrorTypeUnknownExecType ValidationErrorType = "UnknownExecType"
 )

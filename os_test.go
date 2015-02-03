@@ -108,6 +108,43 @@ func (this *Suite) TestPipe() {
 	this.destroy(client)
 }
 
+func (this *Suite) TestListFileInfosShallow() {
+	client := this.newClient()
+	err := client.MkdirAll("dirOne", 0755)
+	require.NoError(this.T(), err)
+	err = client.MkdirAll("dirTwo", 0755)
+	require.NoError(this.T(), err)
+	err = client.MkdirAll("dirOne/dirOneOne", 0755)
+	require.NoError(this.T(), err)
+	err = client.MkdirAll("dirTwo/dirTwoOne", 0755)
+	require.NoError(this.T(), err)
+	file, err := client.Create("one")
+	require.NoError(this.T(), err)
+	file.Close()
+	file, err = client.Create("two")
+	require.NoError(this.T(), err)
+	file.Close()
+	file, err = client.Create("dirOne/oneOne")
+	require.NoError(this.T(), err)
+	file.Close()
+
+	fileNameToDir := map[string]bool{
+		"dirOne": true,
+		"dirTwo": true,
+		"one":    false,
+		"two":    false,
+	}
+	fileInfos, err := client.ListFileInfosShallow(".")
+	require.NoError(this.T(), err)
+	require.Equal(this.T(), 4, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		dir, ok := fileNameToDir[fileInfo.Name()]
+		require.True(this.T(), ok)
+		require.Equal(this.T(), dir, fileInfo.IsDir())
+		require.Equal(this.T(), !dir, fileInfo.Mode().IsRegular())
+	}
+}
+
 func (this *Suite) TestLotsOfDestroys() {
 	client := this.newClient()
 	done := make(chan error)
