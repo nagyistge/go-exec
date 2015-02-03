@@ -134,8 +134,11 @@ func (this *Suite) TestListFileInfosShallow() {
 		"one":    false,
 		"two":    false,
 	}
-	fileInfos, err := client.ListFileInfosShallow(".")
+	dir, err := client.Open(".")
 	require.NoError(this.T(), err)
+	fileInfos, err := dir.Readdir(-1)
+	require.NoError(this.T(), err)
+	dir.Close()
 	require.Equal(this.T(), 4, len(fileInfos))
 	for _, fileInfo := range fileInfos {
 		dir, ok := fileNameToDir[fileInfo.Name()]
