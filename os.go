@@ -6,6 +6,8 @@ import (
 	"os"
 	stdosexec "os/exec"
 	"path/filepath"
+
+	"code.google.com/p/go-uuid/uuid"
 )
 
 const (
@@ -15,18 +17,19 @@ const (
 
 type osClientProvider struct {
 	Destroyable
+	execOptions *OsExecOptions
 }
 
-func newOsExecutorReadFileManagerProvider() *osClientProvider {
-	return newOsClientProvider()
+func newOsExecutorReadFileManagerProvider(execOptions *OsExecOptions) *osClientProvider {
+	return newOsClientProvider(execOptions)
 }
 
-func newOsExecutorWriteFileManagerProvider() *osClientProvider {
-	return newOsClientProvider()
+func newOsExecutorWriteFileManagerProvider(execOptions *OsExecOptions) *osClientProvider {
+	return newOsClientProvider(execOptions)
 }
 
-func newOsClientProvider() *osClientProvider {
-	return &osClientProvider{NewDestroyable(nil)}
+func newOsClientProvider(execOptions *OsExecOptions) *osClientProvider {
+	return &osClientProvider{NewDestroyable(nil), execOptions}
 }
 
 func (this *osClientProvider) NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error) {
@@ -51,9 +54,18 @@ func (this *osClientProvider) NewTempDirClient() (Client, error) {
 
 func (this *osClientProvider) createTempDir() (string, error) {
 	value, err := this.Do(func() (interface{}, error) {
-		tempDir, err := ioutil.TempDir("", tempDirPrefix)
-		if err != nil {
-			return "", err
+		var tempDir string
+		var err error
+		if this.execOptions.TmpDir == "" {
+			tempDir, err = ioutil.TempDir("", tempDirPrefix)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			tempDir = filepath.Join(this.execOptions.TmpDir, uuid.NewUUID().String())
+			if err := os.Mkdir(tempDir, 0755); err != nil {
+				return "", err
+			}
 		}
 		tempDir, err = filepath.EvalSymlinks(filepath.Clean(tempDir))
 		if err != nil {

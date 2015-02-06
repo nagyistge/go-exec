@@ -26,7 +26,7 @@ func (this *Suite) SetupSuite() {
 }
 
 func (this *Suite) SetupTest() {
-	this.clientProvider = newOsClientProvider()
+	this.clientProvider = newOsClientProvider(&OsExecOptions{})
 }
 
 func (this *Suite) TearDownTest() {

@@ -18,7 +18,9 @@ func ConvertExternalExecOptions(externalExecOptions *ExternalExecOptions) (ExecO
 	}
 	switch execType {
 	case ExecTypeOs:
-		return &OsExecOptions{}, nil
+		return &OsExecOptions{
+			TmpDir: externalExecOptions.TmpDir,
+		}, nil
 	default:
 		return nil, newInternalError(newValidationErrorUnknownExecType(execType.string()))
 	}
@@ -31,7 +33,7 @@ func newClientProvider(execOptions ExecOptions) (ClientProvider, error) {
 	}
 	switch execOptions.Type() {
 	case ExecTypeOs:
-		return newOsClientProvider(), nil
+		return newOsClientProvider(execOptions.(*OsExecOptions)), nil
 	default:
 		return nil, newInternalError(newValidationErrorUnknownExecType(execOptions.Type().string()))
 	}

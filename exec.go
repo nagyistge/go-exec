@@ -6,7 +6,8 @@ import (
 )
 
 type ExternalExecOptions struct {
-	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+	Type   string `json:"type,omitempty" yaml:"type,omitempty"`
+	TmpDir string `json:"tmp_dir,omitempty" yaml:tmp_dir,omitempty"`
 }
 
 func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorReadFileManagerProvider, error) {
@@ -25,7 +26,9 @@ type ExecOptions interface {
 	Type() ExecType
 }
 
-type OsExecOptions struct{}
+type OsExecOptions struct {
+	TmpDir string
+}
 
 func (this *OsExecOptions) Type() ExecType {
 	return ExecTypeOs
