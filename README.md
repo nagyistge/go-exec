@@ -233,7 +233,8 @@ func NewExternalExecutorWriteFileManagerProvider(externalExecOptions *ExternalEx
 
 ```go
 type ExternalExecOptions struct {
-	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+	Type   string `json:"type,omitempty" yaml:"type,omitempty"`
+	TmpDir string `json:"tmp_dir,omitempty" yaml:tmp_dir,omitempty"`
 }
 ```
 
@@ -251,7 +252,9 @@ type File interface {
 #### type OsExecOptions
 
 ```go
-type OsExecOptions struct{}
+type OsExecOptions struct {
+	TmpDir string
+}
 ```
 
 
