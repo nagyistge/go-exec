@@ -31,6 +31,17 @@ var (
 )
 ```
 
+#### type BaseDirContext
+
+```go
+type BaseDirContext interface {
+	// base directory that the provider creates directories in
+	// returns false if this is not fixed or this is unknown
+	BaseDirPath() (string, bool)
+}
+```
+
+
 #### type Client
 
 ```go
@@ -54,7 +65,6 @@ type ClientProvider interface {
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 	NewTempDirClient() (Client, error)
-	BaseDir() (string, bool)
 }
 ```
 
@@ -154,6 +164,7 @@ var (
 ```go
 type Executor interface {
 	DirContext
+	BaseDirContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 }
@@ -179,7 +190,6 @@ type ExecutorReadFileManager interface {
 type ExecutorReadFileManagerProvider interface {
 	Destroyable
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
-	BaseDir() (string, bool)
 }
 ```
 
@@ -215,7 +225,6 @@ type ExecutorWriteFileManager interface {
 type ExecutorWriteFileManagerProvider interface {
 	Destroyable
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
-	BaseDir() (string, bool)
 }
 ```
 
@@ -317,6 +326,7 @@ type ReadFile interface {
 ```go
 type ReadFileManager interface {
 	DirContext
+	BaseDirContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -335,6 +345,7 @@ All paths must be relative
 ```go
 type ReadWriteFileManager interface {
 	DirContext
+	BaseDirContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -382,6 +393,7 @@ type WriteFile interface {
 ```go
 type WriteFileManager interface {
 	DirContext
+	BaseDirContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
