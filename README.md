@@ -54,6 +54,7 @@ type ClientProvider interface {
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 	NewTempDirClient() (Client, error)
+	BaseDir() (string, bool)
 }
 ```
 
@@ -178,6 +179,7 @@ type ExecutorReadFileManager interface {
 type ExecutorReadFileManagerProvider interface {
 	Destroyable
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
+	BaseDir() (string, bool)
 }
 ```
 
@@ -213,6 +215,7 @@ type ExecutorWriteFileManager interface {
 type ExecutorWriteFileManagerProvider interface {
 	Destroyable
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
+	BaseDir() (string, bool)
 }
 ```
 

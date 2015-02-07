@@ -52,6 +52,13 @@ func (this *osClientProvider) NewTempDirClient() (Client, error) {
 	return client, nil
 }
 
+func (this *osClientProvider) BaseDir() (string, bool) {
+	if this.execOptions.TmpDir == "" {
+		return "", false
+	}
+	return this.execOptions.TmpDir, true
+}
+
 func (this *osClientProvider) createTempDir() (string, error) {
 	value, err := this.Do(func() (interface{}, error) {
 		var tempDir string
