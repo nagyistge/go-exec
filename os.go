@@ -45,31 +45,39 @@ func (this *osClientProvider) NewTempDirClient() (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := newOsClient(func() error { return this.removeTempDir(tempDir) }, tempDir)
+	baseDirPath, err := this.baseDirPath()
+	if err != nil {
+		return nil, err
+	}
+	client := newOsClient(func() error { return this.removeTempDir(tempDir) }, tempDir, baseDirPath)
 	if err := this.AddChild(client); err != nil {
 		return nil, err
 	}
 	return client, nil
 }
 
-func (this *osClientProvider) BaseDir() (string, bool) {
+func (this *osClientProvider) baseDirPath() (string, error) {
 	if this.execOptions.TmpDir == "" {
-		return "", false
+		return "", nil
 	}
-	return this.execOptions.TmpDir, true
+	return filepath.EvalSymlinks(filepath.Clean(this.execOptions.TmpDir))
 }
 
 func (this *osClientProvider) createTempDir() (string, error) {
 	value, err := this.Do(func() (interface{}, error) {
 		var tempDir string
 		var err error
-		if this.execOptions.TmpDir == "" {
+		baseDirPath, err := this.baseDirPath()
+		if err != nil {
+			return nil, err
+		}
+		if baseDirPath == "" {
 			tempDir, err = ioutil.TempDir("", tempDirPrefix)
 			if err != nil {
 				return "", err
 			}
 		} else {
-			tempDir = filepath.Join(this.execOptions.TmpDir, uuid.NewUUID().String())
+			tempDir = filepath.Join(baseDirPath, uuid.NewUUID().String())
 			if err := os.Mkdir(tempDir, 0755); err != nil {
 				return "", err
 			}
@@ -108,15 +116,23 @@ func (this *osClientProvider) validateIsDir(path string) error {
 
 type osClient struct {
 	Destroyable
-	dirPath string
+	dirPath     string
+	baseDirPath string
 }
 
-func newOsClient(destroyCallback func() error, dirPath string) *osClient {
-	return &osClient{NewDestroyable(destroyCallback), dirPath}
+func newOsClient(destroyCallback func() error, dirPath string, baseDirPath string) *osClient {
+	return &osClient{NewDestroyable(destroyCallback), dirPath, baseDirPath}
 }
 
 func (this *osClient) DirPath() string {
 	return this.dirPath
+}
+
+func (this *osClient) BaseDirPath() (string, bool) {
+	if this.baseDirPath == "" {
+		return "", false
+	}
+	return this.baseDirPath, true
 }
 
 func (this *osClient) Execute(cmd *Cmd) func() error {
@@ -356,7 +372,7 @@ func (this *osClient) newSubDirClient(path string) (*osClient, error) {
 	if err := os.Mkdir(this.absolutePath(path), 0755); err != nil {
 		return nil, err
 	}
-	subDirClient := newOsClient(func() error { return this.removeDir(path) }, this.absolutePath(path))
+	subDirClient := newOsClient(func() error { return this.removeDir(path) }, this.absolutePath(path), this.baseDirPath)
 	if err := this.AddChild(subDirClient); err != nil {
 		return nil, err
 	}
