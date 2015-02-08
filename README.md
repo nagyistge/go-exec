@@ -48,7 +48,6 @@ type BaseDirContext interface {
 type Client interface {
 	Destroyable
 	ReadWriteFileManager
-	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
@@ -189,7 +188,6 @@ type Executor interface {
 type ExecutorReadFileManager interface {
 	Destroyable
 	ReadFileManager
-	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
@@ -225,7 +223,6 @@ func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExe
 type ExecutorWriteFileManager interface {
 	Destroyable
 	WriteFileManager
-	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
@@ -341,6 +338,7 @@ type ReadFile interface {
 type ReadFileManager interface {
 	DirContext
 	BaseDirContext
+	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -360,6 +358,7 @@ All paths must be relative
 type ReadWriteFileManager interface {
 	DirContext
 	BaseDirContext
+	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -408,6 +407,7 @@ type WriteFile interface {
 type WriteFileManager interface {
 	DirContext
 	BaseDirContext
+	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
