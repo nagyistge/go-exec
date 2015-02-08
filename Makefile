@@ -3,22 +3,25 @@
 all: test install
 
 deps:
-	go get -d -v code.google.com/p/go-uuid
+	go get -d -v code.google.com/p/go-uuid || true
+
+testdeps: deps
+	go get -d -v github.com/stretchr/testify
 
 build: deps
 	go build ./...
 
-test: deps
+test: testdeps
 	go test -test.v ./...
 
-cov: deps
+cov: testdeps
 	go get -v github.com/axw/gocov/gocov
 	gocov test | gocov report
 
 install: deps
 	go install ./...
 
-container: deps
+container: testdeps
 	docker build -t peteredge/goexec .
 
 containertest: container
