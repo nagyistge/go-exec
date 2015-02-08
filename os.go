@@ -1,11 +1,16 @@
 package exec
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	stdosexec "os/exec"
 	"path/filepath"
+	"strings"
 
 	"code.google.com/p/go-uuid/uuid"
 )
@@ -135,6 +140,72 @@ func (this *osClient) BaseDirPath() (string, bool) {
 	return this.baseDirPath, true
 }
 
+func (this *osClient) InsideContainer() (bool, error) {
+	value, err := this.Do(func() (interface{}, error) {
+		containerId, err := this.containerId()
+		if err != nil {
+			return nil, err
+		}
+		return containerId != "", nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return value.(bool), nil
+}
+
+func (this *osClient) ContainerId() (string, error) {
+	value, err := this.Do(func() (interface{}, error) {
+		containerId, err := this.containerId()
+		if err != nil {
+			return "", err
+		}
+		if containerId == "" {
+			return "", errors.New("exec: not inside a ontainer")
+		}
+		return containerId, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return value.(string), nil
+}
+
+func (this *osClient) containerId() (string, error) {
+	lines, err := this.cgroupDockerLines()
+	if err != nil {
+		return "", err
+	}
+	if lines == nil || len(lines) == 0 {
+		return "", nil
+	}
+	containerId := strings.TrimPrefix(lines[0], "/docker")
+	for i := 1; i < len(lines); i++ {
+		anotherContainerId := strings.TrimPrefix(lines[i], "/docker")
+		if containerId != anotherContainerId {
+			return "", fmt.Errorf("exec: recieved mismatched container Ids: %v %v", containerId, anotherContainerId)
+		}
+	}
+	return containerId, nil
+}
+
+func (this *osClient) cgroupDockerLines() ([]string, error) {
+	lines, err := readFileLines("/proc/self/cgroup")
+	if err != nil {
+		return nil, err
+	}
+	dockerLines := make([]string, 0)
+	for _, line := range lines {
+		split := strings.Split(line, ":")
+		if len(split) > 2 {
+			if strings.HasPrefix(split[2], "/docker") {
+				dockerLines = append(dockerLines, split[2])
+			}
+		}
+	}
+	return dockerLines, nil
+}
+
 func (this *osClient) Execute(cmd *Cmd) func() error {
 	if cmd.SubDir != "" {
 		if err := this.validatePath(cmd.SubDir); err != nil {
@@ -235,14 +306,7 @@ func (this *osClient) IsFileExists(path string) (bool, error) {
 		return false, err
 	}
 	value, err := this.Do(func() (interface{}, error) {
-		_, err := os.Stat(this.absolutePath(path))
-		if err == nil {
-			return true, nil
-		}
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
+		return isFileExists(this.absolutePath(path))
 	})
 	if err != nil {
 		return false, err
@@ -462,4 +526,61 @@ func (this *osClient) stdosexecPipeCmd(pipeCmd *PipeCmd) (*stdosexec.Cmd, error)
 		stdosexecCmd.Env = pipeCmd.Env
 	}
 	return stdosexecCmd, nil
+}
+
+func readFileLines(path string) ([]string, error) {
+	reader, err := readFile(path)
+	if err != nil {
+		return nil, err
+	}
+	lines := make([]string, 0)
+	if reader == nil {
+		return lines, nil
+	}
+	bufReader := bufio.NewReader(reader)
+	for line, err := bufReader.ReadString('\n'); err != io.EOF; line, err = bufReader.ReadString('\n') {
+		if err != nil {
+			return nil, err
+		}
+		line = strings.TrimSpace(line)
+		if len(line) > 0 {
+			lines = append(lines, line)
+		}
+	}
+	return lines, nil
+}
+
+func readFile(path string) (retReader io.Reader, retErr error) {
+	exists, err := isFileExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := file.Close(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
+	var buffer bytes.Buffer
+	if _, err := io.Copy(&buffer, file); err != nil {
+		return nil, err
+	}
+	return &buffer, nil
+}
+
+func isFileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

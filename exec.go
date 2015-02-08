@@ -122,9 +122,15 @@ type BaseDirContext interface {
 	BaseDirPath() (string, bool)
 }
 
+type DockerContext interface {
+	InsideContainer() (bool, error)
+	ContainerId() (string, error)
+}
+
 type Executor interface {
 	DirContext
 	BaseDirContext
+	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 }
@@ -146,6 +152,7 @@ type ReadFileManager interface {
 type ExecutorReadFileManager interface {
 	Destroyable
 	ReadFileManager
+	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)
@@ -174,6 +181,7 @@ type WriteFileManager interface {
 type ExecutorWriteFileManager interface {
 	Destroyable
 	WriteFileManager
+	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error)
@@ -202,6 +210,7 @@ type ReadWriteFileManager interface {
 type Client interface {
 	Destroyable
 	ReadWriteFileManager
+	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 	NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error)

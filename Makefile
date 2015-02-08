@@ -1,9 +1,9 @@
-.PHONY: all deps build test cov install doc clean
+.PHONY: all deps build test cov install container containertest doc clean
 
 all: test install
 
 deps:
-	go get -d -v -t ./...
+	go get -d -v code.google.com/p/go-uuid
 
 build: deps
 	go build ./...
@@ -17,6 +17,12 @@ cov: deps
 
 install: deps
 	go install ./...
+
+container: deps
+	docker build -t peteredge/goexec .
+
+containertest: container
+	docker run peteredge/goexec make test
 
 doc:
 	go get -v github.com/robertkrimen/godocdown/godocdown
