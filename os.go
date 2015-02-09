@@ -180,9 +180,9 @@ func (this *osClient) containerId() (string, error) {
 		return "", nil
 	}
 	// TODO(pedge)
-	containerId := strings.TrimPrefix(strings.TrimPrefix(lines[0], "/docker/"), "/system.slice/docker-")
+	containerId := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(lines[0], "/docker/"), "/system.slice/docker-"), ".scope")
 	for i := 1; i < len(lines); i++ {
-		anotherContainerId := strings.TrimPrefix(strings.TrimPrefix(lines[i], "/docker/"), "/system.slice/docker-")
+		anotherContainerId := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(lines[i], "/docker/"), "/system.slice/docker-"), ".scope")
 		if containerId != anotherContainerId {
 			return "", fmt.Errorf("exec: recieved mismatched container Ids: %v %v", containerId, anotherContainerId)
 		}
