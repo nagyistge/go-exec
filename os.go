@@ -179,9 +179,10 @@ func (this *osClient) containerId() (string, error) {
 	if lines == nil || len(lines) == 0 {
 		return "", nil
 	}
-	containerId := strings.TrimPrefix(lines[0], "/docker/")
+	// TODO(pedge)
+	containerId := strings.TrimPrefix(strings.TrimPrefix(lines[0], "/docker/"), "/system.slice/docker-")
 	for i := 1; i < len(lines); i++ {
-		anotherContainerId := strings.TrimPrefix(lines[i], "/docker/")
+		anotherContainerId := strings.TrimPrefix(strings.TrimPrefix(lines[i], "/docker/"), "/system.slice/docker-")
 		if containerId != anotherContainerId {
 			return "", fmt.Errorf("exec: recieved mismatched container Ids: %v %v", containerId, anotherContainerId)
 		}
@@ -198,7 +199,7 @@ func (this *osClient) cgroupDockerLines() ([]string, error) {
 	for _, line := range lines {
 		split := strings.Split(line, ":")
 		if len(split) > 2 {
-			if strings.HasPrefix(split[2], "/docker/") {
+			if strings.HasPrefix(split[2], "/docker/") || strings.HasPrefix(split[2], "/system.slice/docker-") {
 				dockerLines = append(dockerLines, split[2])
 			}
 		}
