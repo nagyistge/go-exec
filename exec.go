@@ -177,6 +177,7 @@ type WriteFileManager interface {
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
+	Rename(oldpath string, newpath string) error
 }
 
 type ExecutorWriteFileManager interface {
@@ -206,6 +207,7 @@ type ReadWriteFileManager interface {
 	Open(path string) (ReadFile, error)
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
+	Rename(oldpath string, newpath string) error
 }
 
 type Client interface {

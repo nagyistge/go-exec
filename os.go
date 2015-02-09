@@ -358,6 +358,19 @@ func (this *osClient) MkdirAll(path string, perm os.FileMode) error {
 	return err
 }
 
+func (this *osClient) Rename(oldpath string, newpath string) error {
+	if err := this.validatePath(oldpath); err != nil {
+		return err
+	}
+	if err := this.validatePath(newpath); err != nil {
+		return err
+	}
+	_, err := this.Do(func() (interface{}, error) {
+		return nil, os.Rename(this.absolutePath(oldpath), this.absolutePath(newpath))
+	})
+	return err
+}
+
 func (this *osClient) ListRegularFiles(path string) ([]string, error) {
 	if err := this.validatePath(path); err != nil {
 		return nil, err
