@@ -125,6 +125,17 @@ type osClient struct {
 	baseDirPath string
 }
 
+func newOsAbsolutePathClient(absolutePath string) (*osClient, error) {
+	if !filepath.IsAbs(absolutePath) {
+		return nil, ErrNotRelativePath
+	}
+	absolutePath, err := filepath.EvalSymlinks(filepath.Clean(absolutePath))
+	if err != nil {
+		return nil, err
+	}
+	return newOsClient(func() error { return nil }, absolutePath, ""), nil
+}
+
 func newOsClient(destroyCallback func() error, dirPath string, baseDirPath string) *osClient {
 	return &osClient{NewDestroyable(destroyCallback), dirPath, baseDirPath}
 }

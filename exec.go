@@ -46,6 +46,14 @@ func NewClientProvider(execOptions ExecOptions) (ClientProvider, error) {
 	return newClientProvider(execOptions)
 }
 
+func NewOsExecutor(absolutePath string) (Executor, error) {
+	return newOsAbsolutePathClient(absolutePath)
+}
+
+func NewOsReadWriteFileManager(absolutePath string) (ReadWriteFileManager, error) {
+	return newOsAbsolutePathClient(absolutePath)
+}
+
 type Cmd struct {
 	// Includes path
 	Args []string

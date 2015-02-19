@@ -21,6 +21,7 @@ var (
 	ErrAlreadyDestroyed    = errors.New("exec: already destroyed")
 	ErrFileDoesNotExist    = errors.New("exec: file does not exist")
 	ErrNotRelativePath     = errors.New("exec: not relative path")
+	ErrNotAbsolutePath     = errors.New("exec: not absolute path")
 	ErrPathOutOfContext    = errors.New("exec: path out of context")
 	ErrArgsEmpty           = errors.New("exec: args empty")
 	ErrFileAlreadyExists   = errors.New("exec: file already exists")
@@ -181,6 +182,12 @@ type Executor interface {
 }
 ```
 
+
+#### func  NewOsExecutor
+
+```go
+func NewOsExecutor(absolutePath string) (Executor, error)
+```
 
 #### type ExecutorReadFileManager
 
@@ -369,9 +376,16 @@ type ReadWriteFileManager interface {
 	Open(path string) (ReadFile, error)
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
+	Rename(oldpath string, newpath string) error
 }
 ```
 
+
+#### func  NewOsReadWriteFileManager
+
+```go
+func NewOsReadWriteFileManager(absolutePath string) (ReadWriteFileManager, error)
+```
 
 #### type ValidationError
 
@@ -417,6 +431,7 @@ type WriteFileManager interface {
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
+	Rename(oldpath string, newpath string) error
 }
 ```
 
