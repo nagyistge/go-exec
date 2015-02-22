@@ -2,7 +2,6 @@ package exec
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -169,21 +168,6 @@ func (this *Suite) TestLotsOfDestroys() {
 		}
 	}
 	require.Equal(this.T(), 9, count)
-}
-
-func (this *Suite) TestDockerContext() {
-	client := this.newClient()
-	insideContainer, err := client.InsideContainer()
-	require.NoError(this.T(), err)
-	if insideContainer {
-		fmt.Println("inside container")
-		containerId, err := client.ContainerId()
-		require.NoError(this.T(), err)
-		require.True(this.T(), containerId != "")
-		fmt.Println(containerId)
-	} else {
-		fmt.Println("outside container")
-	}
 }
 
 func (this *Suite) newClient() Client {

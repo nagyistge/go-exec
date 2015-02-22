@@ -124,21 +124,8 @@ type DirContext interface {
 	DirPath() string
 }
 
-type BaseDirContext interface {
-	// base directory that the provider creates directories in
-	// returns false if this is not fixed or this is unknown
-	BaseDirPath() (string, bool)
-}
-
-type DockerContext interface {
-	InsideContainer() (bool, error)
-	ContainerId() (string, error)
-}
-
 type Executor interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 }
@@ -146,8 +133,6 @@ type Executor interface {
 // All paths must be relative
 type ReadFileManager interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -174,8 +159,6 @@ type ExecutorReadFileManagerProvider interface {
 // All paths must be relative
 type WriteFileManager interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -203,8 +186,6 @@ type ExecutorWriteFileManagerProvider interface {
 
 type ReadWriteFileManager interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string

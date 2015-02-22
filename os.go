@@ -3,8 +3,6 @@ package exec
 import (
 	"bufio"
 	"bytes"
-	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -50,31 +48,23 @@ func (this *osClientProvider) NewTempDirClient() (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	baseDirPath, err := this.baseDirPath()
-	if err != nil {
-		return nil, err
-	}
-	client := newOsClient(func() error { return this.removeTempDir(tempDir) }, tempDir, baseDirPath)
+	client := newOsClient(func() error { return this.removeTempDir(tempDir) }, tempDir)
 	if err := this.AddChild(client); err != nil {
 		return nil, err
 	}
 	return client, nil
 }
 
-func (this *osClientProvider) baseDirPath() (string, error) {
-	if this.execOptions.TmpDir == "" {
-		return "", nil
-	}
-	return filepath.EvalSymlinks(filepath.Clean(this.execOptions.TmpDir))
-}
-
 func (this *osClientProvider) createTempDir() (string, error) {
 	value, err := this.Do(func() (interface{}, error) {
 		var tempDir string
 		var err error
-		baseDirPath, err := this.baseDirPath()
-		if err != nil {
-			return nil, err
+		baseDirPath := ""
+		if this.execOptions.TmpDir != "" {
+			baseDirPath, err = filepath.EvalSymlinks(filepath.Clean(this.execOptions.TmpDir))
+			if err != nil {
+				return nil, err
+			}
 		}
 		if baseDirPath == "" {
 			tempDir, err = ioutil.TempDir("", tempDirPrefix)
@@ -121,101 +111,26 @@ func (this *osClientProvider) validateIsDir(path string) error {
 
 type osClient struct {
 	Destroyable
-	dirPath     string
-	baseDirPath string
+	dirPath string
 }
 
 func newOsAbsolutePathClient(absolutePath string) (*osClient, error) {
 	if !filepath.IsAbs(absolutePath) {
-		return nil, ErrNotRelativePath
+		return nil, newValidationErrorNotAbsolutePath(absolutePath)
 	}
 	absolutePath, err := filepath.EvalSymlinks(filepath.Clean(absolutePath))
 	if err != nil {
 		return nil, err
 	}
-	return newOsClient(func() error { return nil }, absolutePath, ""), nil
+	return newOsClient(func() error { return nil }, absolutePath), nil
 }
 
-func newOsClient(destroyCallback func() error, dirPath string, baseDirPath string) *osClient {
-	return &osClient{NewDestroyable(destroyCallback), dirPath, baseDirPath}
+func newOsClient(destroyCallback func() error, dirPath string) *osClient {
+	return &osClient{NewDestroyable(destroyCallback), dirPath}
 }
 
 func (this *osClient) DirPath() string {
 	return this.dirPath
-}
-
-func (this *osClient) BaseDirPath() (string, bool) {
-	if this.baseDirPath == "" {
-		return "", false
-	}
-	return this.baseDirPath, true
-}
-
-func (this *osClient) InsideContainer() (bool, error) {
-	value, err := this.Do(func() (interface{}, error) {
-		containerId, err := this.containerId()
-		if err != nil {
-			return nil, err
-		}
-		return containerId != "", nil
-	})
-	if err != nil {
-		return false, err
-	}
-	return value.(bool), nil
-}
-
-func (this *osClient) ContainerId() (string, error) {
-	value, err := this.Do(func() (interface{}, error) {
-		containerId, err := this.containerId()
-		if err != nil {
-			return "", err
-		}
-		if containerId == "" {
-			return "", errors.New("exec: not inside a ontainer")
-		}
-		return containerId, nil
-	})
-	if err != nil {
-		return "", err
-	}
-	return value.(string), nil
-}
-
-func (this *osClient) containerId() (string, error) {
-	lines, err := this.cgroupDockerLines()
-	if err != nil {
-		return "", err
-	}
-	if lines == nil || len(lines) == 0 {
-		return "", nil
-	}
-	// TODO(pedge)
-	containerId := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(lines[0], "/docker/"), "/system.slice/docker-"), ".scope")
-	for i := 1; i < len(lines); i++ {
-		anotherContainerId := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(lines[i], "/docker/"), "/system.slice/docker-"), ".scope")
-		if containerId != anotherContainerId {
-			return "", fmt.Errorf("exec: recieved mismatched container Ids: %v %v", containerId, anotherContainerId)
-		}
-	}
-	return containerId, nil
-}
-
-func (this *osClient) cgroupDockerLines() ([]string, error) {
-	lines, err := readFileLines("/proc/self/cgroup")
-	if err != nil {
-		return nil, err
-	}
-	dockerLines := make([]string, 0)
-	for _, line := range lines {
-		split := strings.Split(line, ":")
-		if len(split) > 2 {
-			if strings.HasPrefix(split[2], "/docker/") || strings.HasPrefix(split[2], "/system.slice/docker-") {
-				dockerLines = append(dockerLines, split[2])
-			}
-		}
-	}
-	return dockerLines, nil
 }
 
 func (this *osClient) Execute(cmd *Cmd) func() error {
@@ -461,7 +376,7 @@ func (this *osClient) newSubDirClient(path string) (*osClient, error) {
 	if err := os.Mkdir(this.absolutePath(path), 0755); err != nil {
 		return nil, err
 	}
-	subDirClient := newOsClient(func() error { return this.removeDir(path) }, this.absolutePath(path), this.baseDirPath)
+	subDirClient := newOsClient(func() error { return this.removeDir(path) }, this.absolutePath(path))
 	if err := this.AddChild(subDirClient); err != nil {
 		return nil, err
 	}

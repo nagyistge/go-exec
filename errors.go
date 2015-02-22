@@ -16,6 +16,7 @@ var (
 	ErrNotMultipleCommands = errors.New("exec: not multiple commands")
 	ErrNotADirectory       = errors.New("exec: not a directory")
 
+	ValidationErrorTypeNotAbsolutePath ValidationErrorType = "NotAbsolutePath"
 	ValidationErrorTypeUnknownExecType ValidationErrorType = "UnknownExecType"
 )
 
@@ -47,6 +48,10 @@ func (this *validationError) Type() ValidationErrorType {
 
 func newValidationErrorUnknownExecType(execType string) ValidationError {
 	return newValidationError(ValidationErrorTypeUnknownExecType, map[string]string{"execType": execType})
+}
+
+func newValidationErrorNotAbsolutePath(path string) ValidationError {
+	return newValidationError(ValidationErrorTypeNotAbsolutePath, map[string]string{"path": path})
 }
 
 func newInternalError(validationError ValidationError) error {
