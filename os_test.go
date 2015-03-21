@@ -8,6 +8,7 @@ import (
 
 	"testing"
 
+	"github.com/peter-edge/go-concurrent"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -160,7 +161,7 @@ func (this *Suite) TestLotsOfDestroys() {
 	for i := 0; i < 10; i++ {
 		err := <-done
 		if err != nil {
-			if err == ErrAlreadyDestroyed {
+			if err == concurrent.ErrAlreadyDestroyed {
 				count++
 			} else {
 				require.NoError(this.T(), err)

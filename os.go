@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/peter-edge/go-concurrent"
+
 	"code.google.com/p/go-uuid/uuid"
 )
 
@@ -19,7 +21,7 @@ const (
 )
 
 type osClientProvider struct {
-	Destroyable
+	concurrent.Destroyable
 	execOptions *OsExecOptions
 }
 
@@ -32,7 +34,7 @@ func newOsExecutorWriteFileManagerProvider(execOptions *OsExecOptions) *osClient
 }
 
 func newOsClientProvider(execOptions *OsExecOptions) *osClientProvider {
-	return &osClientProvider{NewDestroyable(nil), execOptions}
+	return &osClientProvider{concurrent.NewDestroyable(nil), execOptions}
 }
 
 func (this *osClientProvider) NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error) {
@@ -110,7 +112,7 @@ func (this *osClientProvider) validateIsDir(path string) error {
 }
 
 type osClient struct {
-	Destroyable
+	concurrent.Destroyable
 	dirPath string
 }
 
@@ -126,7 +128,7 @@ func newOsAbsolutePathClient(absolutePath string) (*osClient, error) {
 }
 
 func newOsClient(destroyCallback func() error, dirPath string) *osClient {
-	return &osClient{NewDestroyable(destroyCallback), dirPath}
+	return &osClient{concurrent.NewDestroyable(destroyCallback), dirPath}
 }
 
 func (this *osClient) DirPath() string {

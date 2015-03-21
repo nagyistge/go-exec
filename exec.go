@@ -3,6 +3,8 @@ package exec
 import (
 	"io"
 	"os"
+
+	"github.com/peter-edge/go-concurrent"
 )
 
 type ExternalExecOptions struct {
@@ -114,12 +116,6 @@ type WriteFile interface {
 	Chmod(mode os.FileMode) error
 }
 
-type Destroyable interface {
-	Destroy() error
-	Do(func() (interface{}, error)) (interface{}, error)
-	AddChild(Destroyable) error
-}
-
 type DirContext interface {
 	DirPath() string
 }
@@ -144,7 +140,7 @@ type ReadFileManager interface {
 }
 
 type ExecutorReadFileManager interface {
-	Destroyable
+	concurrent.Destroyable
 	ReadFileManager
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
@@ -152,7 +148,7 @@ type ExecutorReadFileManager interface {
 }
 
 type ExecutorReadFileManagerProvider interface {
-	Destroyable
+	concurrent.Destroyable
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
 }
 
@@ -172,7 +168,7 @@ type WriteFileManager interface {
 }
 
 type ExecutorWriteFileManager interface {
-	Destroyable
+	concurrent.Destroyable
 	WriteFileManager
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
@@ -180,7 +176,7 @@ type ExecutorWriteFileManager interface {
 }
 
 type ExecutorWriteFileManagerProvider interface {
-	Destroyable
+	concurrent.Destroyable
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 }
 
@@ -200,7 +196,7 @@ type ReadWriteFileManager interface {
 }
 
 type Client interface {
-	Destroyable
+	concurrent.Destroyable
 	ReadWriteFileManager
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
@@ -210,7 +206,7 @@ type Client interface {
 }
 
 type ClientProvider interface {
-	Destroyable
+	concurrent.Destroyable
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 	NewTempDirClient() (Client, error)
