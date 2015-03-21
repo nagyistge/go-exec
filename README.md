@@ -1,4 +1,3 @@
-[![Codeship Status](http://img.shields.io/codeship/34b974b0-6dfa-0132-51b4-66f2bf861e14/master.svg?style=flat-square)](https://codeship.com/projects/59077)
 [![API Documentation](http://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/peter-edge/go-exec)
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/peter-edge/go-exec/blob/master/LICENSE)
 
@@ -14,7 +13,6 @@ import (
 )
 ```
 
-## Usage
 
 ```go
 var (
@@ -28,20 +26,10 @@ var (
 	ErrNotMultipleCommands = errors.New("exec: not multiple commands")
 	ErrNotADirectory       = errors.New("exec: not a directory")
 
+	ValidationErrorTypeNotAbsolutePath ValidationErrorType = "NotAbsolutePath"
 	ValidationErrorTypeUnknownExecType ValidationErrorType = "UnknownExecType"
 )
 ```
-
-#### type BaseDirContext
-
-```go
-type BaseDirContext interface {
-	// base directory that the provider creates directories in
-	// returns false if this is not fixed or this is unknown
-	BaseDirPath() (string, bool)
-}
-```
-
 
 #### type Client
 
@@ -132,16 +120,6 @@ type DirContext interface {
 ```
 
 
-#### type DockerContext
-
-```go
-type DockerContext interface {
-	InsideContainer() (bool, error)
-	ContainerId() (string, error)
-}
-```
-
-
 #### type ExecOptions
 
 ```go
@@ -175,8 +153,6 @@ var (
 ```go
 type Executor interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
 }
@@ -344,8 +320,6 @@ type ReadFile interface {
 ```go
 type ReadFileManager interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -364,8 +338,6 @@ All paths must be relative
 ```go
 type ReadWriteFileManager interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
@@ -420,8 +392,6 @@ type WriteFile interface {
 ```go
 type WriteFileManager interface {
 	DirContext
-	BaseDirContext
-	DockerContext
 	IsFileExists(path string) (bool, error)
 	ListRegularFiles(path string) ([]string, error)
 	Join(elem ...string) string
