@@ -7,23 +7,6 @@ import (
 	"github.com/peter-edge/go-concurrent"
 )
 
-type ExternalExecOptions struct {
-	Type   string `json:"type,omitempty" yaml:"type,omitempty"`
-	TmpDir string `json:"tmp_dir,omitempty" yaml:tmp_dir,omitempty"`
-}
-
-func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorReadFileManagerProvider, error) {
-	return NewExternalClientProvider(externalExecOptions)
-}
-
-func NewExternalExecutorWriteFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorWriteFileManagerProvider, error) {
-	return NewExternalClientProvider(externalExecOptions)
-}
-
-func NewExternalClientProvider(externalExecOptions *ExternalExecOptions) (ClientProvider, error) {
-	return newExternalClientProvider(externalExecOptions)
-}
-
 type ExecOptions interface {
 	Type() ExecType
 }
@@ -54,6 +37,10 @@ func NewOsExecutor(absolutePath string) (Executor, error) {
 
 func NewOsReadWriteFileManager(absolutePath string) (ReadWriteFileManager, error) {
 	return newOsAbsolutePathClient(absolutePath)
+}
+
+func ValidateExecOptions(execOptions ExecOptions) error {
+	return validateExecOptions(execOptions)
 }
 
 type Cmd struct {

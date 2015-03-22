@@ -1,9 +1,6 @@
 package exec
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 var (
 	ExecTypeOs ExecType = 0
@@ -19,26 +16,27 @@ var (
 
 type ExecType uint
 
-func validExecType(s string) bool {
-	_, ok := stringToExecType[s]
-	return ok
+func AllExecTypes() []ExecType {
+	return []ExecType{
+		ExecTypeOs,
+	}
 }
 
-func execTypeOf(s string) (ExecType, error) {
+func ExecTypeOf(s string) (ExecType, error) {
 	execType, ok := stringToExecType[s]
 	if !ok {
-		return 0, errors.New(unknownExecType(s))
+		return 0, UnknownExecType(s)
 	}
 	return execType, nil
 }
 
-func (this ExecType) string() string {
+func (this ExecType) String() string {
 	if int(this) < lenExecTypeToString {
 		return execTypeToString[this]
 	}
-	panic(unknownExecType(this))
+	panic(UnknownExecType(this).Error())
 }
 
-func unknownExecType(unknownExecType interface{}) string {
-	return fmt.Sprintf("exec: unknown ExecType: %v", unknownExecType)
+func UnknownExecType(unknownExecType interface{}) error {
+	return fmt.Errorf("exec: unknown ExecType: %v", unknownExecType)
 }

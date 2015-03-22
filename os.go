@@ -1,21 +1,11 @@
 package exec
 
 import (
-	"io"
-	"io/ioutil"
 	"os"
-	stdosexec "os/exec"
 	"path/filepath"
 
 	"github.com/peter-edge/go-concurrent"
 	"github.com/peter-edge/go-osutils"
-
-	"code.google.com/p/go-uuid/uuid"
-)
-
-const (
-	tempDirPrefix         = "exec"
-	readDirNamesSliceSize = 100
 )
 
 type osClientProvider struct {
@@ -57,31 +47,11 @@ func (this *osClientProvider) NewTempDirClient() (Client, error) {
 
 func (this *osClientProvider) createTempDir() (string, error) {
 	value, err := this.Do(func() (interface{}, error) {
-		var tempDir string
-		var err error
-		baseDirPath := ""
 		if this.execOptions.TmpDir != "" {
-			baseDirPath, err = filepath.EvalSymlinks(filepath.Clean(this.execOptions.TmpDir))
-			if err != nil {
-				return nil, err
-			}
-		}
-		if baseDirPath == "" {
-			tempDir, err = ioutil.TempDir("", tempDirPrefix)
-			if err != nil {
-				return "", err
-			}
+			return osutils.NewTempSubDir(this.execOptions.TmpDir)
 		} else {
-			tempDir = filepath.Join(baseDirPath, uuid.NewUUID().String())
-			if err := os.Mkdir(tempDir, 0755); err != nil {
-				return "", err
-			}
+			return osutils.NewTempDir()
 		}
-		tempDir, err = filepath.EvalSymlinks(filepath.Clean(tempDir))
-		if err != nil {
-			return "", err
-		}
-		return tempDir, nil
 	})
 	if err != nil {
 		return "", err
@@ -99,11 +69,11 @@ func (this *osClientProvider) removeTempDir(tempDir string) error {
 
 // this is only called in thread-safe context
 func (this *osClientProvider) validateIsDir(path string) error {
-	fileInfo, err := os.Stat(path)
+	exists, err := osutils.IsDirExists(path)
 	if err != nil {
 		return err
 	}
-	if !fileInfo.IsDir() {
+	if !exists {
 		return ErrFileDoesNotExist
 	}
 	return nil
@@ -118,7 +88,7 @@ func newOsAbsolutePathClient(absolutePath string) (*osClient, error) {
 	if !filepath.IsAbs(absolutePath) {
 		return nil, newValidationErrorNotAbsolutePath(absolutePath)
 	}
-	absolutePath, err := filepath.EvalSymlinks(filepath.Clean(absolutePath))
+	absolutePath, err := osutils.CleanPath(absolutePath)
 	if err != nil {
 		return nil, err
 	}
@@ -140,14 +110,7 @@ func (this *osClient) Execute(cmd *Cmd) func() error {
 		}
 	}
 	value, err := this.Do(func() (interface{}, error) {
-		stdosexecCmd, err := this.stdosexecCmd(cmd)
-		if err != nil {
-			return nil, err
-		}
-		if err := stdosexecCmd.Start(); err != nil {
-			return nil, err
-		}
-		return func() error { return stdosexecCmd.Wait() }, nil
+		return osutils.Execute(this.osutilsCmd(cmd))
 	})
 	if err != nil {
 		return func() error { return err }
@@ -156,10 +119,6 @@ func (this *osClient) Execute(cmd *Cmd) func() error {
 }
 
 func (this *osClient) ExecutePiped(pipeCmdList *PipeCmdList) func() error {
-	numCmds := len(pipeCmdList.PipeCmds)
-	if numCmds < 2 {
-		return func() error { return ErrNotMultipleCommands }
-	}
 	for _, pipeCmd := range pipeCmdList.PipeCmds {
 		if pipeCmd.SubDir != "" {
 			if err := this.validatePath(pipeCmd.SubDir); err != nil {
@@ -167,60 +126,8 @@ func (this *osClient) ExecutePiped(pipeCmdList *PipeCmdList) func() error {
 			}
 		}
 	}
-	stdosexecCmds := make([]*stdosexec.Cmd, numCmds)
-	for i, pipeCmd := range pipeCmdList.PipeCmds {
-		stdosexecCmd, err := this.stdosexecPipeCmd(pipeCmd)
-		if err != nil {
-			return func() error { return err }
-		}
-		stdosexecCmds[i] = stdosexecCmd
-	}
-	readers := make([]*io.PipeReader, numCmds-1)
-	writers := make([]*io.PipeWriter, numCmds-1)
 	value, err := this.Do(func() (interface{}, error) {
-		reader, writer := io.Pipe()
-		readers[0] = reader
-		writers[0] = writer
-		stdosexecCmds[0].Stdin = pipeCmdList.Stdin
-		for i := 0; i < numCmds-1; i++ {
-			stdosexecCmds[i].Stdout = writer
-			stdosexecCmds[i].Stderr = pipeCmdList.Stderr
-			stdosexecCmds[i+1].Stdin = reader
-			if i != numCmds-2 {
-				reader, writer = io.Pipe()
-				readers[i+1] = reader
-				writers[i+1] = writer
-			}
-		}
-		stdosexecCmds[numCmds-1].Stdout = pipeCmdList.Stdout
-		stdosexecCmds[numCmds-1].Stderr = pipeCmdList.Stderr
-		for _, stdosexecCmd := range stdosexecCmds {
-			if err := stdosexecCmd.Start(); err != nil {
-				return nil, err
-			}
-		}
-		return func() error {
-			for i := 0; i < numCmds-1; i++ {
-				if err := stdosexecCmds[i].Wait(); err != nil {
-					return err
-				}
-				if i != 0 {
-					if err := readers[i-1].Close(); err != nil {
-						return err
-					}
-				}
-				if err := writers[i].Close(); err != nil {
-					return err
-				}
-			}
-			if err := stdosexecCmds[numCmds-1].Wait(); err != nil {
-				return err
-			}
-			if err := readers[numCmds-2].Close(); err != nil {
-				return err
-			}
-			return nil
-		}, nil
+		return osutils.ExecutePiped(this.osutilsPipeCmdList(pipeCmdList))
 	})
 	if err != nil {
 		return func() error { return err }
@@ -246,14 +153,7 @@ func (this *osClient) Open(path string) (ReadFile, error) {
 		return nil, err
 	}
 	value, err := this.Do(func() (interface{}, error) {
-		exists, err := this.IsFileExists(path)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, ErrFileDoesNotExist
-		}
-		return os.Open(this.absolutePath(path))
+		return osutils.Open(this.absolutePath(path))
 	})
 	if err != nil {
 		return nil, err
@@ -266,7 +166,7 @@ func (this *osClient) Create(path string) (WriteFile, error) {
 		return nil, err
 	}
 	value, err := this.Do(func() (interface{}, error) {
-		return os.Create(this.absolutePath(path))
+		return osutils.Create(this.absolutePath(path))
 	})
 	if err != nil {
 		return nil, err
@@ -279,7 +179,7 @@ func (this *osClient) MkdirAll(path string, perm os.FileMode) error {
 		return err
 	}
 	_, err := this.Do(func() (interface{}, error) {
-		return nil, os.MkdirAll(this.absolutePath(path), perm)
+		return nil, osutils.MkdirAll(this.absolutePath(path), perm)
 	})
 	return err
 }
@@ -302,27 +202,19 @@ func (this *osClient) ListRegularFiles(path string) ([]string, error) {
 		return nil, err
 	}
 	value, err := this.Do(func() (interface{}, error) {
-		files := make([]string, 0)
-		err := filepath.Walk(
-			this.absolutePath(path),
-			func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if info.Mode().IsRegular() {
-					relativeFile, err := filepath.Rel(this.dirPath, path)
-					if err != nil {
-						return err
-					}
-					files = append(files, relativeFile)
-				}
-				return nil
-			},
-		)
+		files, err := osutils.ListRegularFiles(this.absolutePath(path))
 		if err != nil {
 			return nil, err
 		}
-		return files, nil
+		relFiles := make([]string, len(files))
+		for i, file := range files {
+			rel, err := filepath.Rel(this.dirPath, file)
+			if err != nil {
+				return nil, err
+			}
+			relFiles[i] = rel
+		}
+		return relFiles, nil
 	})
 	if err != nil {
 		return nil, err
@@ -373,7 +265,7 @@ func (this *osClient) newSubDirClient(path string) (*osClient, error) {
 	if exists {
 		return nil, ErrFileAlreadyExists
 	}
-	if err := os.Mkdir(this.absolutePath(path), 0755); err != nil {
+	if err := osutils.Mkdir(this.absolutePath(path), 0755); err != nil {
 		return nil, err
 	}
 	subDirClient := newOsClient(func() error { return this.removeDir(path) }, this.absolutePath(path))
@@ -387,18 +279,18 @@ func (this *osClient) removeDir(path string) error {
 	if err := this.validateIsDir(path); err != nil {
 		return err
 	}
-	return os.RemoveAll(this.absolutePath(path))
+	return osutils.RemoveAll(this.absolutePath(path))
 }
 
 func (this *osClient) validateIsDir(path string) error {
 	if err := this.validatePath(path); err != nil {
 		return err
 	}
-	fileInfo, err := os.Stat(this.absolutePath(path))
+	exists, err := osutils.IsDirExists(this.absolutePath(path))
 	if err != nil {
 		return err
 	}
-	if !fileInfo.IsDir() {
+	if !exists {
 		return ErrFileDoesNotExist
 	}
 	return nil
@@ -423,47 +315,30 @@ func (this *osClient) absolutePath(path string) string {
 	return this.Join(this.dirPath, path)
 }
 
-func (this *osClient) stdosexecCmd(cmd *Cmd) (*stdosexec.Cmd, error) {
-	if cmd.Args == nil || len(cmd.Args) == 0 {
-		return nil, ErrArgsEmpty
+func (this *osClient) osutilsCmd(cmd *Cmd) *osutils.Cmd {
+	return &osutils.Cmd{
+		Args:        cmd.Args,
+		AbsoluteDir: this.absolutePath(cmd.SubDir),
+		Env:         cmd.Env,
+		Stdin:       cmd.Stdin,
+		Stdout:      cmd.Stdout,
+		Stderr:      cmd.Stderr,
 	}
-	var stdosexecCmd *stdosexec.Cmd
-	if len(cmd.Args) == 1 {
-		stdosexecCmd = stdosexec.Command(cmd.Args[0])
-	} else {
-		stdosexecCmd = stdosexec.Command(cmd.Args[0], cmd.Args[1:]...)
-	}
-	if cmd.SubDir != "" {
-		stdosexecCmd.Dir = this.absolutePath(cmd.SubDir)
-	} else {
-		stdosexecCmd.Dir = this.dirPath
-	}
-	if cmd.Env != nil && len(cmd.Env) > 0 {
-		stdosexecCmd.Env = cmd.Env
-	}
-	stdosexecCmd.Stdin = cmd.Stdin
-	stdosexecCmd.Stdout = cmd.Stdout
-	stdosexecCmd.Stderr = cmd.Stderr
-	return stdosexecCmd, nil
 }
 
-func (this *osClient) stdosexecPipeCmd(pipeCmd *PipeCmd) (*stdosexec.Cmd, error) {
-	if pipeCmd.Args == nil || len(pipeCmd.Args) == 0 {
-		return nil, ErrArgsEmpty
+func (this *osClient) osutilsPipeCmdList(pipeCmdList *PipeCmdList) *osutils.PipeCmdList {
+	pipeCmds := make([]*osutils.PipeCmd, len(pipeCmdList.PipeCmds))
+	for i, pipeCmd := range pipeCmdList.PipeCmds {
+		pipeCmds[i] = &osutils.PipeCmd{
+			Args:        pipeCmd.Args,
+			AbsoluteDir: this.absolutePath(pipeCmd.SubDir),
+			Env:         pipeCmd.Env,
+		}
 	}
-	var stdosexecCmd *stdosexec.Cmd
-	if len(pipeCmd.Args) == 1 {
-		stdosexecCmd = stdosexec.Command(pipeCmd.Args[0])
-	} else {
-		stdosexecCmd = stdosexec.Command(pipeCmd.Args[0], pipeCmd.Args[1:]...)
+	return &osutils.PipeCmdList{
+		PipeCmds: pipeCmds,
+		Stdin:    pipeCmdList.Stdin,
+		Stdout:   pipeCmdList.Stdout,
+		Stderr:   pipeCmdList.Stderr,
 	}
-	if pipeCmd.SubDir != "" {
-		stdosexecCmd.Dir = this.absolutePath(pipeCmd.SubDir)
-	} else {
-		stdosexecCmd.Dir = this.dirPath
-	}
-	if pipeCmd.Env != nil && len(pipeCmd.Env) > 0 {
-		stdosexecCmd.Env = pipeCmd.Env
-	}
-	return stdosexecCmd, nil
 }
