@@ -1,16 +1,14 @@
 package exec
 
 import (
-	"bufio"
-	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
 	stdosexec "os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/peter-edge/go-concurrent"
+	"github.com/peter-edge/go-osutils"
 
 	"code.google.com/p/go-uuid/uuid"
 )
@@ -235,7 +233,7 @@ func (this *osClient) IsFileExists(path string) (bool, error) {
 		return false, err
 	}
 	value, err := this.Do(func() (interface{}, error) {
-		return isFileExists(this.absolutePath(path))
+		return osutils.IsFileExists(this.absolutePath(path))
 	})
 	if err != nil {
 		return false, err
@@ -468,61 +466,4 @@ func (this *osClient) stdosexecPipeCmd(pipeCmd *PipeCmd) (*stdosexec.Cmd, error)
 		stdosexecCmd.Env = pipeCmd.Env
 	}
 	return stdosexecCmd, nil
-}
-
-func readFileLines(path string) ([]string, error) {
-	reader, err := readFile(path)
-	if err != nil {
-		return nil, err
-	}
-	lines := make([]string, 0)
-	if reader == nil {
-		return lines, nil
-	}
-	bufReader := bufio.NewReader(reader)
-	for line, err := bufReader.ReadString('\n'); err != io.EOF; line, err = bufReader.ReadString('\n') {
-		if err != nil {
-			return nil, err
-		}
-		line = strings.TrimSpace(line)
-		if len(line) > 0 {
-			lines = append(lines, line)
-		}
-	}
-	return lines, nil
-}
-
-func readFile(path string) (retReader io.Reader, retErr error) {
-	exists, err := isFileExists(path)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, nil
-	}
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := file.Close(); err != nil && retErr == nil {
-			retErr = err
-		}
-	}()
-	var buffer bytes.Buffer
-	if _, err := io.Copy(&buffer, file); err != nil {
-		return nil, err
-	}
-	return &buffer, nil
-}
-
-func isFileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }
