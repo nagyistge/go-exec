@@ -121,6 +121,7 @@ type ReadFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Base(path string) string
 	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
@@ -147,6 +148,7 @@ type WriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Base(path string) string
 	Dir(path string) string
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
@@ -174,6 +176,7 @@ type ReadWriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Base(path string) string
 	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)

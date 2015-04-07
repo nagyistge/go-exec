@@ -234,6 +234,10 @@ func (this *osClient) ToSlash(path string) string {
 	return filepath.ToSlash(path)
 }
 
+func (this *osClient) Base(path string) string {
+	return filepath.Base(path)
+}
+
 func (this *osClient) Dir(path string) string {
 	return filepath.Dir(path)
 }

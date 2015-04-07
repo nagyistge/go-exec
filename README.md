@@ -31,11 +31,29 @@ var (
 )
 ```
 
+#### func  AllExecTypes
+
+```go
+func AllExecTypes() []ExecType
+```
+
+#### func  UnknownExecType
+
+```go
+func UnknownExecType(unknownExecType interface{}) error
+```
+
+#### func  ValidateExecOptions
+
+```go
+func ValidateExecOptions(execOptions ExecOptions) error
+```
+
 #### type Client
 
 ```go
 type Client interface {
-	Destroyable
+	concurrent.Destroyable
 	ReadWriteFileManager
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
@@ -50,7 +68,7 @@ type Client interface {
 
 ```go
 type ClientProvider interface {
-	Destroyable
+	concurrent.Destroyable
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 	NewTempDirClient() (Client, error)
@@ -94,23 +112,6 @@ type Cmd struct {
 ```
 
 
-#### type Destroyable
-
-```go
-type Destroyable interface {
-	Destroy() error
-	Do(func() (interface{}, error)) (interface{}, error)
-	AddChild(Destroyable) error
-}
-```
-
-
-#### func  NewDestroyable
-
-```go
-func NewDestroyable(destroyCallback func() error) Destroyable
-```
-
 #### type DirContext
 
 ```go
@@ -148,6 +149,18 @@ var (
 )
 ```
 
+#### func  ExecTypeOf
+
+```go
+func ExecTypeOf(s string) (ExecType, error)
+```
+
+#### func (ExecType) String
+
+```go
+func (this ExecType) String() string
+```
+
 #### type Executor
 
 ```go
@@ -169,7 +182,7 @@ func NewOsExecutor(absolutePath string) (Executor, error)
 
 ```go
 type ExecutorReadFileManager interface {
-	Destroyable
+	concurrent.Destroyable
 	ReadFileManager
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
@@ -182,7 +195,7 @@ type ExecutorReadFileManager interface {
 
 ```go
 type ExecutorReadFileManagerProvider interface {
-	Destroyable
+	concurrent.Destroyable
 	NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error)
 }
 ```
@@ -204,7 +217,7 @@ func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExe
 
 ```go
 type ExecutorWriteFileManager interface {
-	Destroyable
+	concurrent.Destroyable
 	WriteFileManager
 	Execute(cmd *Cmd) func() error
 	ExecutePiped(pipeCmdList *PipeCmdList) func() error
@@ -217,7 +230,7 @@ type ExecutorWriteFileManager interface {
 
 ```go
 type ExecutorWriteFileManagerProvider interface {
-	Destroyable
+	concurrent.Destroyable
 	NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error)
 }
 ```
@@ -325,6 +338,7 @@ type ReadFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Base(path string) string
 	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
@@ -343,6 +357,7 @@ type ReadWriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Base(path string) string
 	Dir(path string) string
 	PathSeparator() string
 	Open(path string) (ReadFile, error)
@@ -397,6 +412,7 @@ type WriteFileManager interface {
 	Join(elem ...string) string
 	Match(pattern string, path string) (bool, error)
 	ToSlash(path string) string
+	Base(path string) string
 	Dir(path string) string
 	PathSeparator() string
 	Create(name string) (WriteFile, error)
