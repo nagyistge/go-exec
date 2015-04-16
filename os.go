@@ -197,6 +197,16 @@ func (this *osClient) Rename(oldpath string, newpath string) error {
 	return err
 }
 
+func (this *osClient) Remove(path string) error {
+	if err := this.validatePath(path); err != nil {
+		return err
+	}
+	_, err := this.Do(func() (interface{}, error) {
+		return nil, os.Remove(this.absolutePath(path))
+	})
+	return err
+}
+
 func (this *osClient) ListRegularFiles(path string) ([]string, error) {
 	if err := this.validatePath(path); err != nil {
 		return nil, err

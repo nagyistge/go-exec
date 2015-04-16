@@ -364,6 +364,7 @@ type ReadWriteFileManager interface {
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
 	Rename(oldpath string, newpath string) error
+	Remove(path string) error
 }
 ```
 
@@ -418,6 +419,7 @@ type WriteFileManager interface {
 	Create(name string) (WriteFile, error)
 	MkdirAll(path string, perm os.FileMode) error
 	Rename(oldpath string, newpath string) error
+	Remove(path string) error
 }
 ```
 
