@@ -43,6 +43,10 @@ func ValidateExecOptions(execOptions ExecOptions) error {
 	return validateExecOptions(execOptions)
 }
 
+func ReadLines(readFileManager ReadFileManager, path string) ([]string, error) {
+	return readLines(readFileManager, path)
+}
+
 type Cmd struct {
 	// Includes path
 	Args []string
