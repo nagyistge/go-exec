@@ -47,6 +47,10 @@ func ReadLines(readFileManager ReadFileManager, path string) ([]string, error) {
 	return readLines(readFileManager, path)
 }
 
+func GetLines(reader io.Reader) ([]string, error) {
+	return getLines(reader)
+}
+
 func ReadAll(readFileManager ReadFileManager, path string) ([]byte, error) {
 	return readAll(readFileManager, path)
 }

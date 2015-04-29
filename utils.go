@@ -21,9 +21,13 @@ func readLines(readFileManager ReadFileManager, path string) (retValue []string,
 			retErr = err
 		}
 	}()
-	reader := bufio.NewReader(file)
+	return getLines(file)
+}
+
+func getLines(reader io.Reader) ([]string, error) {
+	bufReader := bufio.NewReader(reader)
 	lines := make([]string, 0)
-	for line, err := reader.ReadString('\n'); err != io.EOF; line, err = reader.ReadString('\n') {
+	for line, err := bufReader.ReadString('\n'); err != io.EOF; line, err = bufReader.ReadString('\n') {
 		if err != nil {
 			return nil, err
 		}
