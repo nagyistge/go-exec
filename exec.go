@@ -116,6 +116,7 @@ type WriteFile interface {
 }
 
 type DirContext interface {
+	DirName() string
 	DirPath() string
 }
 

@@ -99,6 +99,10 @@ func newOsClient(destroyCallback func() error, dirPath string) *osClient {
 	return &osClient{concurrent.NewDestroyable(destroyCallback), dirPath}
 }
 
+func (this *osClient) DirName() string {
+	return filepath.Base(this.DirPath())
+}
+
 func (this *osClient) DirPath() string {
 	return this.dirPath
 }
