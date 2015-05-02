@@ -27,13 +27,18 @@ func readLines(readFileManager ReadFileManager, path string) (retValue []string,
 func getLines(reader io.Reader) ([]string, error) {
 	bufReader := bufio.NewReader(reader)
 	lines := make([]string, 0)
-	for line, err := bufReader.ReadString('\n'); err != io.EOF; line, err = bufReader.ReadString('\n') {
+	for line, err := bufReader.ReadString('\n'); true; line, err = bufReader.ReadString('\n') {
+		if len(line) > 0 {
+			trimmedLine := strings.TrimSpace(line)
+			if len(trimmedLine) > 0 {
+				lines = append(lines, trimmedLine)
+			}
+		}
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			return nil, err
-		}
-		trimmedLine := strings.TrimSpace(line)
-		if len(trimmedLine) > 0 {
-			lines = append(lines, trimmedLine)
 		}
 	}
 	return lines, nil
