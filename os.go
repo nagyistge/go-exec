@@ -25,33 +25,32 @@ func newOsClientProvider(execOptions *OsExecOptions) *osClientProvider {
 	return &osClientProvider{concurrent.NewDestroyable(nil), execOptions}
 }
 
-func (this *osClientProvider) NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error) {
-	return this.NewTempDirClient()
+func (o *osClientProvider) NewTempDirExecutorReadFileManager() (ExecutorReadFileManager, error) {
+	return o.NewTempDirClient()
 }
 
-func (this *osClientProvider) NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error) {
-	return this.NewTempDirClient()
+func (o *osClientProvider) NewTempDirExecutorWriteFileManager() (ExecutorWriteFileManager, error) {
+	return o.NewTempDirClient()
 }
 
-func (this *osClientProvider) NewTempDirClient() (Client, error) {
-	tempDir, err := this.createTempDir()
+func (o *osClientProvider) NewTempDirClient() (Client, error) {
+	tempDir, err := o.createTempDir()
 	if err != nil {
 		return nil, err
 	}
-	client := newOsClient(func() error { return this.removeTempDir(tempDir) }, tempDir)
-	if err := this.AddChild(client); err != nil {
+	client := newOsClient(func() error { return o.removeTempDir(tempDir) }, tempDir)
+	if err := o.AddChild(client); err != nil {
 		return nil, err
 	}
 	return client, nil
 }
 
-func (this *osClientProvider) createTempDir() (string, error) {
-	value, err := this.Do(func() (interface{}, error) {
-		if this.execOptions.TmpDir != "" {
-			return osutils.NewTempSubDir(this.execOptions.TmpDir)
-		} else {
-			return osutils.NewTempDir()
+func (o *osClientProvider) createTempDir() (string, error) {
+	value, err := o.Do(func() (interface{}, error) {
+		if o.execOptions.TmpDir != "" {
+			return osutils.NewTempSubDir(o.execOptions.TmpDir)
 		}
+		return osutils.NewTempDir()
 	})
 	if err != nil {
 		return "", err
@@ -60,15 +59,15 @@ func (this *osClientProvider) createTempDir() (string, error) {
 }
 
 // this is only called in thread-safe context
-func (this *osClientProvider) removeTempDir(tempDir string) error {
-	if err := this.validateIsDir(tempDir); err != nil {
+func (o *osClientProvider) removeTempDir(tempDir string) error {
+	if err := o.validateIsDir(tempDir); err != nil {
 		return err
 	}
 	return os.RemoveAll(tempDir)
 }
 
 // this is only called in thread-safe context
-func (this *osClientProvider) validateIsDir(path string) error {
+func (o *osClientProvider) validateIsDir(path string) error {
 	exists, err := osutils.IsDirExists(path)
 	if err != nil {
 		return err
@@ -99,22 +98,22 @@ func newOsClient(destroyCallback func() error, dirPath string) *osClient {
 	return &osClient{concurrent.NewDestroyable(destroyCallback), dirPath}
 }
 
-func (this *osClient) DirName() string {
-	return filepath.Base(this.DirPath())
+func (o *osClient) DirName() string {
+	return filepath.Base(o.DirPath())
 }
 
-func (this *osClient) DirPath() string {
-	return this.dirPath
+func (o *osClient) DirPath() string {
+	return o.dirPath
 }
 
-func (this *osClient) Execute(cmd *Cmd) func() error {
+func (o *osClient) Execute(cmd *Cmd) func() error {
 	if cmd.SubDir != "" {
-		if err := this.validatePath(cmd.SubDir); err != nil {
+		if err := o.validatePath(cmd.SubDir); err != nil {
 			return func() error { return err }
 		}
 	}
-	value, err := this.Do(func() (interface{}, error) {
-		return osutils.Execute(this.osutilsCmd(cmd))
+	value, err := o.Do(func() (interface{}, error) {
+		return osutils.Execute(o.osutilsCmd(cmd))
 	})
 	if err != nil {
 		return func() error { return err }
@@ -122,16 +121,16 @@ func (this *osClient) Execute(cmd *Cmd) func() error {
 	return value.(func() error)
 }
 
-func (this *osClient) ExecutePiped(pipeCmdList *PipeCmdList) func() error {
+func (o *osClient) ExecutePiped(pipeCmdList *PipeCmdList) func() error {
 	for _, pipeCmd := range pipeCmdList.PipeCmds {
 		if pipeCmd.SubDir != "" {
-			if err := this.validatePath(pipeCmd.SubDir); err != nil {
+			if err := o.validatePath(pipeCmd.SubDir); err != nil {
 				return func() error { return err }
 			}
 		}
 	}
-	value, err := this.Do(func() (interface{}, error) {
-		return osutils.ExecutePiped(this.osutilsPipeCmdList(pipeCmdList))
+	value, err := o.Do(func() (interface{}, error) {
+		return osutils.ExecutePiped(o.osutilsPipeCmdList(pipeCmdList))
 	})
 	if err != nil {
 		return func() error { return err }
@@ -139,12 +138,12 @@ func (this *osClient) ExecutePiped(pipeCmdList *PipeCmdList) func() error {
 	return value.(func() error)
 }
 
-func (this *osClient) IsFileExists(path string) (bool, error) {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) IsFileExists(path string) (bool, error) {
+	if err := o.validatePath(path); err != nil {
 		return false, err
 	}
-	value, err := this.Do(func() (interface{}, error) {
-		return osutils.IsFileExists(this.absolutePath(path))
+	value, err := o.Do(func() (interface{}, error) {
+		return osutils.IsFileExists(o.absolutePath(path))
 	})
 	if err != nil {
 		return false, err
@@ -152,12 +151,12 @@ func (this *osClient) IsFileExists(path string) (bool, error) {
 	return value.(bool), nil
 }
 
-func (this *osClient) Open(path string) (ReadFile, error) {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) Open(path string) (ReadFile, error) {
+	if err := o.validatePath(path); err != nil {
 		return nil, err
 	}
-	value, err := this.Do(func() (interface{}, error) {
-		return osutils.Open(this.absolutePath(path))
+	value, err := o.Do(func() (interface{}, error) {
+		return osutils.Open(o.absolutePath(path))
 	})
 	if err != nil {
 		return nil, err
@@ -165,12 +164,12 @@ func (this *osClient) Open(path string) (ReadFile, error) {
 	return value.(*os.File), nil
 }
 
-func (this *osClient) Create(path string) (WriteFile, error) {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) Create(path string) (WriteFile, error) {
+	if err := o.validatePath(path); err != nil {
 		return nil, err
 	}
-	value, err := this.Do(func() (interface{}, error) {
-		return osutils.Create(this.absolutePath(path))
+	value, err := o.Do(func() (interface{}, error) {
+		return osutils.Create(o.absolutePath(path))
 	})
 	if err != nil {
 		return nil, err
@@ -178,51 +177,51 @@ func (this *osClient) Create(path string) (WriteFile, error) {
 	return value.(*os.File), nil
 }
 
-func (this *osClient) MkdirAll(path string, perm os.FileMode) error {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) MkdirAll(path string, perm os.FileMode) error {
+	if err := o.validatePath(path); err != nil {
 		return err
 	}
-	_, err := this.Do(func() (interface{}, error) {
-		return nil, osutils.MkdirAll(this.absolutePath(path), perm)
+	_, err := o.Do(func() (interface{}, error) {
+		return nil, osutils.MkdirAll(o.absolutePath(path), perm)
 	})
 	return err
 }
 
-func (this *osClient) Rename(oldpath string, newpath string) error {
-	if err := this.validatePath(oldpath); err != nil {
+func (o *osClient) Rename(oldpath string, newpath string) error {
+	if err := o.validatePath(oldpath); err != nil {
 		return err
 	}
-	if err := this.validatePath(newpath); err != nil {
+	if err := o.validatePath(newpath); err != nil {
 		return err
 	}
-	_, err := this.Do(func() (interface{}, error) {
-		return nil, os.Rename(this.absolutePath(oldpath), this.absolutePath(newpath))
+	_, err := o.Do(func() (interface{}, error) {
+		return nil, os.Rename(o.absolutePath(oldpath), o.absolutePath(newpath))
 	})
 	return err
 }
 
-func (this *osClient) Remove(path string) error {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) Remove(path string) error {
+	if err := o.validatePath(path); err != nil {
 		return err
 	}
-	_, err := this.Do(func() (interface{}, error) {
-		return nil, os.Remove(this.absolutePath(path))
+	_, err := o.Do(func() (interface{}, error) {
+		return nil, os.Remove(o.absolutePath(path))
 	})
 	return err
 }
 
-func (this *osClient) ListRegularFiles(path string) ([]string, error) {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) ListRegularFiles(path string) ([]string, error) {
+	if err := o.validatePath(path); err != nil {
 		return nil, err
 	}
-	value, err := this.Do(func() (interface{}, error) {
-		files, err := osutils.ListRegularFiles(this.absolutePath(path))
+	value, err := o.Do(func() (interface{}, error) {
+		files, err := osutils.ListRegularFiles(o.absolutePath(path))
 		if err != nil {
 			return nil, err
 		}
 		relFiles := make([]string, len(files))
 		for i, file := range files {
-			rel, err := filepath.Rel(this.dirPath, file)
+			rel, err := filepath.Rel(o.dirPath, file)
 			if err != nil {
 				return nil, err
 			}
@@ -236,75 +235,75 @@ func (this *osClient) ListRegularFiles(path string) ([]string, error) {
 	return value.([]string), nil
 }
 
-func (this *osClient) Join(elem ...string) string {
+func (o *osClient) Join(elem ...string) string {
 	return filepath.Join(elem...)
 }
 
-func (this *osClient) Match(pattern string, path string) (bool, error) {
+func (o *osClient) Match(pattern string, path string) (bool, error) {
 	return filepath.Match(pattern, path)
 }
 
-func (this *osClient) ToSlash(path string) string {
+func (o *osClient) ToSlash(path string) string {
 	return filepath.ToSlash(path)
 }
 
-func (this *osClient) Base(path string) string {
+func (o *osClient) Base(path string) string {
 	return filepath.Base(path)
 }
 
-func (this *osClient) Dir(path string) string {
+func (o *osClient) Dir(path string) string {
 	return filepath.Dir(path)
 }
 
-func (this *osClient) PathSeparator() string {
+func (o *osClient) PathSeparator() string {
 	return string(os.PathSeparator)
 }
 
-func (this *osClient) NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error) {
-	return this.newSubDirClient(path)
+func (o *osClient) NewSubDirExecutorReadFileManager(path string) (ExecutorReadFileManager, error) {
+	return o.newSubDirClient(path)
 }
 
-func (this *osClient) NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error) {
-	return this.newSubDirClient(path)
+func (o *osClient) NewSubDirExecutorWriteFileManager(path string) (ExecutorWriteFileManager, error) {
+	return o.newSubDirClient(path)
 }
 
-func (this *osClient) NewSubDirClient(path string) (Client, error) {
-	return this.newSubDirClient(path)
+func (o *osClient) NewSubDirClient(path string) (Client, error) {
+	return o.newSubDirClient(path)
 }
 
-func (this *osClient) newSubDirClient(path string) (*osClient, error) {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) newSubDirClient(path string) (*osClient, error) {
+	if err := o.validatePath(path); err != nil {
 		return nil, err
 	}
-	exists, err := this.IsFileExists(path)
+	exists, err := o.IsFileExists(path)
 	if err != nil {
 		return nil, err
 	}
 	if exists {
 		return nil, ErrFileAlreadyExists
 	}
-	if err := osutils.Mkdir(this.absolutePath(path), 0755); err != nil {
+	if err := osutils.Mkdir(o.absolutePath(path), 0755); err != nil {
 		return nil, err
 	}
-	subDirClient := newOsClient(func() error { return this.removeDir(path) }, this.absolutePath(path))
-	if err := this.AddChild(subDirClient); err != nil {
+	subDirClient := newOsClient(func() error { return o.removeDir(path) }, o.absolutePath(path))
+	if err := o.AddChild(subDirClient); err != nil {
 		return nil, err
 	}
 	return subDirClient, nil
 }
 
-func (this *osClient) removeDir(path string) error {
-	if err := this.validateIsDir(path); err != nil {
+func (o *osClient) removeDir(path string) error {
+	if err := o.validateIsDir(path); err != nil {
 		return err
 	}
-	return osutils.RemoveAll(this.absolutePath(path))
+	return osutils.RemoveAll(o.absolutePath(path))
 }
 
-func (this *osClient) validateIsDir(path string) error {
-	if err := this.validatePath(path); err != nil {
+func (o *osClient) validateIsDir(path string) error {
+	if err := o.validatePath(path); err != nil {
 		return err
 	}
-	exists, err := osutils.IsDirExists(this.absolutePath(path))
+	exists, err := osutils.IsDirExists(o.absolutePath(path))
 	if err != nil {
 		return err
 	}
@@ -314,29 +313,29 @@ func (this *osClient) validateIsDir(path string) error {
 	return nil
 }
 
-func (this *osClient) validatePath(path string) error {
+func (o *osClient) validatePath(path string) error {
 	if filepath.IsAbs(path) {
 		return ErrNotRelativePath
 	}
 	// TODO(pedge): EvalSymlinks fails if the file does not exist
-	//path, err := filepath.EvalSymlinks(filepath.Clean(this.absolutePath(path)))
+	//path, err := filepath.EvalSymlinks(filepath.Clean(o.absolutePath(path)))
 	//if err != nil {
 	//return err
 	//}
-	//if !strings.HasPrefix(path, this.DirPath()) {
+	//if !strings.HasPrefix(path, o.DirPath()) {
 	//return ErrPathOutOfContext
 	//}
 	return nil
 }
 
-func (this *osClient) absolutePath(path string) string {
-	return this.Join(this.dirPath, path)
+func (o *osClient) absolutePath(path string) string {
+	return o.Join(o.dirPath, path)
 }
 
-func (this *osClient) osutilsCmd(cmd *Cmd) *osutils.Cmd {
+func (o *osClient) osutilsCmd(cmd *Cmd) *osutils.Cmd {
 	return &osutils.Cmd{
 		Args:        cmd.Args,
-		AbsoluteDir: this.absolutePath(cmd.SubDir),
+		AbsoluteDir: o.absolutePath(cmd.SubDir),
 		Env:         cmd.Env,
 		Stdin:       cmd.Stdin,
 		Stdout:      cmd.Stdout,
@@ -344,12 +343,12 @@ func (this *osClient) osutilsCmd(cmd *Cmd) *osutils.Cmd {
 	}
 }
 
-func (this *osClient) osutilsPipeCmdList(pipeCmdList *PipeCmdList) *osutils.PipeCmdList {
+func (o *osClient) osutilsPipeCmdList(pipeCmdList *PipeCmdList) *osutils.PipeCmdList {
 	pipeCmds := make([]*osutils.PipeCmd, len(pipeCmdList.PipeCmds))
 	for i, pipeCmd := range pipeCmdList.PipeCmds {
 		pipeCmds[i] = &osutils.PipeCmd{
 			Args:        pipeCmd.Args,
-			AbsoluteDir: this.absolutePath(pipeCmd.SubDir),
+			AbsoluteDir: o.absolutePath(pipeCmd.SubDir),
 			Env:         pipeCmd.Env,
 		}
 	}

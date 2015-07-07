@@ -30,11 +30,11 @@ func ExecTypeOf(s string) (ExecType, error) {
 	return execType, nil
 }
 
-func (this ExecType) String() string {
-	if int(this) < lenExecTypeToString {
-		return execTypeToString[this]
+func (e ExecType) String() string {
+	if int(e) < lenExecTypeToString {
+		return execTypeToString[e]
 	}
-	panic(UnknownExecType(this).Error())
+	panic(UnknownExecType(e).Error())
 }
 
 func UnknownExecType(unknownExecType interface{}) error {

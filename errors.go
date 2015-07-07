@@ -38,12 +38,12 @@ func newValidationError(errorType ValidationErrorType, tags map[string]string) *
 	return &validationError{errorType, tags}
 }
 
-func (this *validationError) Error() string {
-	return fmt.Sprintf("%v %v", this.errorType, this.tags)
+func (v *validationError) Error() string {
+	return fmt.Sprintf("%v %v", v.errorType, v.tags)
 }
 
-func (this *validationError) Type() ValidationErrorType {
-	return this.errorType
+func (v *validationError) Type() ValidationErrorType {
+	return v.errorType
 }
 
 func newValidationErrorUnknownExecType(execType string) ValidationError {

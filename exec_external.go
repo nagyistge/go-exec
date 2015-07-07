@@ -2,7 +2,7 @@ package exec
 
 type ExternalExecOptions struct {
 	Type   string `json:"type,omitempty" yaml:"type,omitempty"`
-	TmpDir string `json:"tmp_dir,omitempty" yaml:tmp_dir,omitempty"`
+	TmpDir string `json:"tmp_dir,omitempty" yaml:"tmp_dir,omitempty"`
 }
 
 func NewExternalExecutorReadFileManagerProvider(externalExecOptions *ExternalExecOptions) (ExecutorReadFileManagerProvider, error) {

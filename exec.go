@@ -15,7 +15,7 @@ type OsExecOptions struct {
 	TmpDir string
 }
 
-func (this *OsExecOptions) Type() ExecType {
+func (o *OsExecOptions) Type() ExecType {
 	return ExecTypeOs
 }
 
