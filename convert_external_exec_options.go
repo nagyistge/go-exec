@@ -13,5 +13,4 @@ func convertExternalExecOptions(externalExecOptions *ExternalExecOptions) (ExecO
 	default:
 		return nil, UnknownExecType(execType)
 	}
-	return nil, nil
 }

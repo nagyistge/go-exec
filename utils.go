@@ -26,7 +26,7 @@ func readLines(readFileManager ReadFileManager, path string) (retValue []string,
 
 func getLines(reader io.Reader) ([]string, error) {
 	bufReader := bufio.NewReader(reader)
-	lines := make([]string, 0)
+	var lines []string
 	for line, err := bufReader.ReadString('\n'); true; line, err = bufReader.ReadString('\n') {
 		if len(line) > 0 {
 			trimmedLine := strings.TrimSpace(line)
