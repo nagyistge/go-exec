@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/peter-edge/go-concurrent"
-	"github.com/peter-edge/go-osutils"
+	"github.com/codeship/go-concurrent"
+	"github.com/codeship/go-osutils"
 )
 
 type osClientProvider struct {

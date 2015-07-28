@@ -9,7 +9,7 @@ import (
 
 	"testing"
 
-	"github.com/peter-edge/go-concurrent"
+	"github.com/codeship/go-concurrent"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

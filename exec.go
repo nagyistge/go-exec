@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/peter-edge/go-concurrent"
+	"github.com/codeship/go-concurrent"
 )
 
 type ExecOptions interface {
